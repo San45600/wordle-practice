@@ -1,115 +1,186 @@
 "use client";
 
-import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { WordRow } from "./WordRow";
+import { useGameState, useSettingsState } from "./state/States";
+import { Keyboard } from "./Keyboard";
+import { MdMenu } from "react-icons/md";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { CgSpinner } from "react-icons/cg";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import { Button } from "./ui/button";
 
-const wordList = ["apple", "brain", "flame", "crown", "light"]; // Example word list
-const maxRounds = 6; // Maximum number of guesses
+const buttonClassName = "hover:text-green-500 w-fit";
+const maxRounds = 6; // Maximum number of guessList
 
 export function WordleGame() {
-  const [answer, setAnswer] = useState<string>(
-    wordList[Math.floor(Math.random() * wordList.length)]
-  );
-  const [guesses, setGuesses] = useState<string[]>([]);
-  const [currentGuess, setCurrentGuess] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
-  const [gameOver, setGameOver] = useState<boolean>(false);
+  const {
+    guessList,
+    currentGuess,
+    answer,
+    gamePhase,
+    openResultDialog,
+    setOpenResultDialog,
+    setGamePhase,
+    currentRow,
+    setGuessList,
+    setCurrentGuess,
+    initialize,
+  } = useGameState();
 
-  // Function to check if the guess is valid and provide feedback
-  const evaluateGuess = (guess: string): string[] => {
-    const result: string[] = [];
+  const [confirm, setConfirm] = useState(false);
 
-    for (let i = 0; i < guess.length; i++) {
-      if (guess[i] === answer[i]) {
-        result.push("Hit");
-      } else if (answer.includes(guess[i])) {
-        result.push("Present");
-      } else {
-        result.push("Miss");
-      }
-    }
-
-    return result;
-  };
-
-  // Handle the form submission (user's guess)
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (currentGuess.length !== 5) {
-      setMessage("Please enter a 5-letter word.");
-      return;
-    }
-
-    if (guesses.length >= maxRounds) {
-      setMessage("Game Over! You've used all your attempts.");
-      setGameOver(true);
-      return;
-    }
-
-    const feedback = evaluateGuess(currentGuess.toLowerCase());
-
-    setGuesses([...guesses, currentGuess]);
-    setCurrentGuess("");
-
-    // Check if the player has won
-    if (currentGuess.toLowerCase() === answer) {
-      setMessage("Congratulations! You guessed the word!");
-      setGameOver(true);
-    } else if (guesses.length + 1 === maxRounds) {
-      setMessage(`Game Over! The correct word was: ${answer}`);
-      setGameOver(true);
-    } else {
-      setMessage(feedback.join(", "));
-    }
-  };
+  useEffect(() => {
+    if (!confirm) return;
+    setTimeout(() => setConfirm(false), 5000);
+  }, [confirm]);
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Wordle Game</h1>
+    <>
+      <motion.div className="relative text-white p-12 w-full h-full flex items-center justify-center ">
+        <AnimatePresence>
+          {gamePhase == "preGame" && (
+            <>
+              <motion.div
+                className="w-full "
+                key={"menu"}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 0.5,
+                }}
+              >
+                <h1 className="text-6xl " onClick={() => console.log(answer)}>
+                  Wordle Game
+                </h1>
+                <div className="mt-8 flex flex-col gap-4 text-3xl">
+                  <button
+                    className={buttonClassName}
+                    onClick={() => {
+                      initialize(maxRounds);
+                    }}
+                  >
+                    Play
+                  </button>
+                  <button
+                    className={buttonClassName}
+                    onClick={() => setOpenResultDialog(true)}
+                  >
+                    Settings
+                  </button>
+                  <button className={buttonClassName}>GitHub</button>
+                </div>
+              </motion.div>
 
-      {!gameOver && (
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={currentGuess}
-            onChange={(e) => setCurrentGuess(e.target.value)}
-            maxLength={5}
-            placeholder="Enter a 5-letter word"
-            disabled={gameOver}
-            style={{
-              padding: "10px",
-              fontSize: "16px",
-              textTransform: "uppercase",
+              <motion.div
+                key={"menugrid"}
+                className="w-full justify-center h-fit items-center flex flex-col gap-8 "
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 0.5,
+                }}
+              >
+                <div className="flex flex-col">
+                  {guessList.map((_, index) => (
+                    <WordRow key={index} rowIndex={index} />
+                  ))}
+                </div>
+              </motion.div>
+            </>
+          )}
+          {gamePhase != "preGame" && gamePhase != "initializing" && (
+            <motion.div
+              key={"game"}
+              className="absolute flex flex-col h-full justify-center items-center "
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: 0.5,
+              }}
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="fixed top-16 left-20 ">
+                    <MdMenu size={32} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      if (!confirm) {
+                        e.preventDefault();
+                        setConfirm(true);
+                      } else {
+                        setConfirm(false);
+                        setGamePhase("preGame");
+                      }
+                    }}
+                    className={`${
+                      confirm ? "text-red-500 hover:text-red-500" : ""
+                    }`}
+                  >
+                    {!confirm ? "Back to menu" : "Are you sure?"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {guessList.map((_, index) => (
+                <WordRow key={index} rowIndex={index} />
+              ))}
+              <Keyboard />
+            </motion.div>
+          )}
+          {gamePhase == "initializing" && (
+            <motion.div
+              key={"loading"}
+              className="absolute flex h-full justify-center items-center gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: 0.5,
+              }}
+            ><CgSpinner className="animate-spin" size={32}/> Loading...</motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+      <Dialog open={openResultDialog} onOpenChange={setOpenResultDialog}>
+        <DialogContent className="h-96 flex flex-col items-center">
+          <div className="text-4xl">Congratulations!</div>
+          <div>You guessed:</div>
+          <WordRow rowIndex={-1} word={answer} />
+          <div>Number of tries: {currentRow}</div>
+          <Button
+            className="w-64"
+            onClick={() => {
+              setOpenResultDialog(false);
+              initialize(maxRounds);
             }}
-          />
-          <button
-            type="submit"
-            style={{ marginLeft: "10px", padding: "10px", fontSize: "16px" }}
           >
-            Submit
-          </button>
-        </form>
-      )}
-
-      <div style={{ marginTop: "20px" }}>
-        <p>{message}</p>
-        <div>
-          {guesses.map((guess, index) => (
-            <div key={index} style={{ marginTop: "10px" }}>
-              <p>{guess.toUpperCase()}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {gameOver && (
-        <button
-          onClick={() => window.location.reload()}
-          style={{ padding: "10px", marginTop: "20px" }}
-        >
-          Play Again
-        </button>
-      )}
-    </div>
+            Play another round!
+          </Button>
+          <Button
+            className="w-64"
+            variant={"secondary"}
+            onClick={() => {
+              setOpenResultDialog(false);
+              setGamePhase("preGame");
+            }}
+          >
+            Back to menu
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

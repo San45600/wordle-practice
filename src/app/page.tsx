@@ -1,6 +1,12 @@
+import { Card } from "@/components/ui/card";
 import { WordleGame } from "@/components/WordleGame";
-import Image from "next/image";
 
 export default function Home() {
-  return <WordleGame />;
+  return (
+    <div className="px-16 py-12">
+      <Card className=" bg-[#18181b] h-full">
+        <WordleGame />
+      </Card>
+    </div>
+  );
 }
