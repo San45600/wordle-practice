@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// const wordList = ["apple", "brain", "flame", "crown", "light"]; // Example word list
-const wordList = ["qqqqq", "barbs"];
-
 type GamePhaseType = "preGame" | "inProgress" | "lost" | "won" | "initializing";
 
 interface GameState {
@@ -15,6 +12,9 @@ interface GameState {
   resultHistory: Record<number, string[]>;
   gamePhase: GamePhaseType;
   openResultDialog: boolean;
+  openSettingsDialog: boolean;
+  wordList: string[];
+
   presentedLetter: string[];
   hitLetter: string[];
   missLetter: string[];
@@ -30,6 +30,8 @@ interface GameState {
   setCurrentRow: (val: number) => void;
   setGamePhase: (val: GamePhaseType) => void;
   setOpenResultDialog: (val: boolean) => void;
+  setOpenSettingsDialog: (val: boolean) => void;
+  setWordList: (val: string[]) => void;
 
   initialize: (rows: number) => void;
   handleEnter: () => void;
@@ -44,9 +46,11 @@ export const useGameState = create<GameState>()((set, get) => ({
   resultHistory: Array(6).fill(Array(5).fill("")),
   gamePhase: "preGame",
   openResultDialog: false,
+  openSettingsDialog: false,
   presentedLetter: [],
   hitLetter: [],
   missLetter: [],
+  wordList: ["apple", "brain", "flame", "crown", "light"], // Example word list
 
   pushPresentedLetter: (val) =>
     set(({ presentedLetter }) => ({
@@ -61,7 +65,9 @@ export const useGameState = create<GameState>()((set, get) => ({
     set({
       maximumRound: val,
       guessList: Array(val).fill(""),
+      answer: "",
       resultHistory: Array(val).fill(Array(5).fill("")),
+      currentRow: 0
     });
   },
   setAnswer: (val) => set({ answer: val }),
@@ -75,9 +81,11 @@ export const useGameState = create<GameState>()((set, get) => ({
   setCurrentRow: (val) => set({ currentRow: val }),
   setGamePhase: (val) => set({ gamePhase: val }),
   setOpenResultDialog: (val) => set({ openResultDialog: val }),
+  setOpenSettingsDialog: (val) => set({ openSettingsDialog: val }),
+  setWordList: (val) => set({ wordList: val }),
 
   initialize: (rows) => {
-    const { answer } = get();
+    const { answer, wordList } = get();
     const newWords = wordList.filter((word) => word !== (answer ?? ""));
 
     set({

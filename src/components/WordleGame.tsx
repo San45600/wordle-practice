@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { WordRow } from "./WordRow";
 import { useGameState } from "./state/States";
 import { Keyboard } from "./Keyboard";
@@ -15,31 +15,42 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { ResultDialog } from "./ResultDialog";
+import { SettingsDialog } from "./SettingsDialog";
+import { ScrollArea } from "./ui/scroll-area";
+import { SparklesAnimation } from "./SparklesAnimation";
 
 const buttonClassName = "hover:text-green-500 w-fit";
 
 export function WordleGame() {
   const {
     guessList,
-    currentGuess,
     answer,
     gamePhase,
-    openResultDialog,
     maximumRound,
-    setOpenResultDialog,
+    setOpenSettingsDialog,
     setGamePhase,
     currentRow,
-    setGuessList,
-    setCurrentGuess,
     initialize,
   } = useGameState();
 
   const [confirm, setConfirm] = useState(false);
+  const [triggerSparkle, setTriggerSparkle] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = 64 * currentRow - 336;
+    }
+  }, [currentRow]);
 
   useEffect(() => {
     if (!confirm) return;
     setTimeout(() => setConfirm(false), 5000);
   }, [confirm]);
+
+  useEffect(() => {
+    if (gamePhase == "won") setTimeout(() => setTriggerSparkle(true), 1500);
+  }, [gamePhase]);
 
   return (
     <>
@@ -71,7 +82,7 @@ export function WordleGame() {
                   </button>
                   <button
                     className={buttonClassName}
-                    onClick={() => setOpenResultDialog(true)}
+                    onClick={() => setOpenSettingsDialog(true)}
                   >
                     Settings
                   </button>
@@ -87,11 +98,12 @@ export function WordleGame() {
                   duration: 0.5,
                 }}
               >
-                <div className="flex flex-col">
+                <ScrollArea className="flex flex-col max-h-[30rem]">
                   {guessList.map((_, index) => (
                     <WordRow key={index} rowIndex={index} />
                   ))}
-                </div>
+                  {answer && <WordRow rowIndex={-1} word={answer} />}
+                </ScrollArea>
               </motion.div>
             </>
           )}
@@ -132,9 +144,24 @@ export function WordleGame() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {guessList.map((_, index) => (
-                <WordRow key={index} rowIndex={index} />
-              ))}
+              <div
+                ref={scrollAreaRef}
+                className="flex flex-col max-h-[26rem] overflow-scroll"
+              >
+                {guessList.map((_, index) => (
+                  <WordRow key={index} rowIndex={index} />
+                ))}
+              </div>
+              <SparklesAnimation
+                isTriggered={triggerSparkle}
+                className="absolute w-full flex items-end justify-start"
+                direction="top-left"
+              />
+              <SparklesAnimation
+                isTriggered={triggerSparkle}
+                className="absolute w-full flex items-end justify-end"
+                direction="top-right"
+              />
               <Keyboard />
             </motion.div>
           )}
@@ -154,7 +181,12 @@ export function WordleGame() {
           )}
         </AnimatePresence>
       </motion.div>
-      <ResultDialog />
+      <ResultDialog
+        callback={() => {
+          setTriggerSparkle(false);
+        }}
+      />
+      <SettingsDialog />
     </>
   );
 }

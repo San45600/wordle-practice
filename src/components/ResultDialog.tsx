@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { useGameState } from "./state/States";
 import { WordRow } from "./WordRow";
 
-export function ResultDialog() {
+export function ResultDialog({ callback }: { callback: () => void }) {
   const {
     answer,
     openResultDialog,
@@ -27,25 +27,27 @@ export function ResultDialog() {
         <WordRow rowIndex={-1} word={answer} />
         {gamePhase == "won" && <div>Number of tries: {currentRow}</div>}
         <div className="flex flex-col gap-4">
-        <Button
-          className="w-64"
-          onClick={() => {
-            setOpenResultDialog(false);
-            initialize(maximumRound);
-          }}
-        >
-          Play another round!
-        </Button>
-        <Button
-          className="w-64"
-          variant={"secondary"}
-          onClick={() => {
-            setOpenResultDialog(false);
-            setGamePhase("preGame");
-          }}
-        >
-          Back to menu
-        </Button>
+          <Button
+            className="w-64"
+            onClick={() => {
+              setOpenResultDialog(false);
+              initialize(maximumRound);
+              callback();
+            }}
+          >
+            Play another round!
+          </Button>
+          <Button
+            className="w-64"
+            variant={"secondary"}
+            onClick={() => {
+              setOpenResultDialog(false);
+              setGamePhase("preGame");
+              callback();
+            }}
+          >
+            Back to menu
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

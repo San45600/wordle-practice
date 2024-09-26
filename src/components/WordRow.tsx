@@ -26,7 +26,6 @@ export function WordRow({
 
   const [flipped, setFlipped] = useState<boolean>(false);
   const [result, setResult] = useState<string[]>(Array(5).fill(""));
-  const [isTriggered, setTriggered] = useState(false);
 
   const displayedGuess = useMemo(() => {
     if (word) return word;
@@ -42,11 +41,11 @@ export function WordRow({
     if (currentRow > rowIndex) {
       if (!!resultHistory[rowIndex]) setResult(resultHistory[rowIndex]);
       setFlipped(true);
-    }
+    } else setFlipped(false);
     if (gamePhase != "inProgress") return;
     if (currentRow >= maximumRound) {
-        setGamePhase("lost");
-        setTimeout(() => setOpenResultDialog(true), 1500);
+      setGamePhase("lost");
+      setTimeout(() => setOpenResultDialog(true), 1500);
     }
   }, [currentRow]);
 
@@ -54,7 +53,6 @@ export function WordRow({
     if (gamePhase != "inProgress") return;
     if (result.every((result) => result === "Hit")) {
       setGamePhase("won");
-      setTimeout(() => setTriggered(true), 1500);
       setTimeout(() => setOpenResultDialog(true), 2500);
     }
   }, [result]);
@@ -66,16 +64,11 @@ export function WordRow({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: rowIndex * 0.1 }}
     >
-      <SparklesAnimation
-        isTriggered={isTriggered}
-        className="absolute w-full flex items-end h-full justify-start"
-        direction="top-left"
-      />
-      <SparklesAnimation
-        isTriggered={isTriggered}
-        className="absolute w-full flex items-end h-full justify-end"
-        direction="top-right"
-      />
+      {
+        <div className=" w-8 flex items-center text-lg font-bold justify-center">
+          {word ? "A" : rowIndex + 1}
+        </div>
+      }
       {result.map((val, index) => (
         <LetterSquare
           key={index}
