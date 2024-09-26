@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameState } from "./state/States";
 import { LetterSquare } from "./LetterSquare";
 import { SparklesAnimation } from "./SparklesAnimation";
@@ -17,8 +17,8 @@ export function WordRow({
     guessList,
     currentGuess,
     currentRow,
-    answer,
     gamePhase,
+    resultHistory,
     setGamePhase,
     setOpenResultDialog,
   } = useGameState();
@@ -38,37 +38,26 @@ export function WordRow({
   }, [guessList, currentGuess, currentRow, rowIndex]);
 
   useEffect(() => {
-    if (!displayedGuess) return;
-    const processingResult: string[] = Array(5).fill("");
-
-    for (let i = 0; i < 5; i++) {
-      if (displayedGuess[i] === answer[i]) {
-        processingResult[i] = "Hit";
-      } else if (answer.includes(displayedGuess[i])) {
-        processingResult[i] = "Present";
-      } else {
-        processingResult[i] = "Miss";
-      }
+    if (currentRow > rowIndex) {
+      if (!!resultHistory[rowIndex]) setResult(resultHistory[rowIndex]);
+      setFlipped(true);
     }
-    setResult(processingResult);
-  }, [displayedGuess]);
+  }, [currentRow]);
 
   useEffect(() => {
-    if (currentRow > rowIndex) setFlipped(true);
     if (gamePhase != "inProgress") return;
     if (result.every((result) => result === "Hit")) {
       setGamePhase("won");
       setTimeout(() => setTriggered(true), 1500);
       setTimeout(() => setOpenResultDialog(true), 2500);
     }
-  }, [currentRow]);
+  }, [result]);
 
   return (
     <motion.div
       className="mt-4 gap-2 flex relative"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      onClick={() => console.log(gamePhase)}
       transition={{ duration: 0.3, delay: rowIndex * 0.1 }}
     >
       <SparklesAnimation

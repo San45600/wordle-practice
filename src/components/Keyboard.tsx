@@ -2,6 +2,7 @@ import React from "react";
 import { useGameState } from "./state/States";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function Keyboard() {
   const firstRow = "QWERTYUIOP".split("");
@@ -11,15 +12,26 @@ export function Keyboard() {
   const {
     currentGuess,
     gamePhase,
-    setGamePhase,
+    hitLetter,
+    presentedLetter,
+    missLetter,
     setCurrentGuess,
     handleEnter,
   } = useGameState();
 
-  const handleClick = (key:string) => {
-    if(currentGuess.length >= 5) return
-    setCurrentGuess(key.toLowerCase())
-  }
+  const handleClick = (key: string) => {
+    if (currentGuess.length >= 5) return;
+    setCurrentGuess(key.toLowerCase());
+  };
+
+  const getKeyColor = (key: string) => {
+    if (hitLetter.includes(key.toLowerCase())) return "bg-[#6ca965] text-white";
+    if (presentedLetter.includes(key.toLowerCase()))
+      return "bg-[#c8b653] text-white";
+    if (missLetter.includes(key.toLowerCase()))
+        return "bg-[#787c7f] text-white";
+    return ""; // default color
+  };
 
   return (
     <div className="flex flex-col justify-center items-center gap-2 mt-8">
@@ -29,6 +41,7 @@ export function Keyboard() {
           <Button
             size={"icon"}
             key={key}
+            className={cn(getKeyColor(key))}
             disabled={gamePhase != "inProgress"}
             onClick={() => handleClick(key.toLowerCase())}
           >
@@ -43,6 +56,7 @@ export function Keyboard() {
           <Button
             size={"icon"}
             key={key}
+            className={cn(getKeyColor(key))}
             disabled={gamePhase != "inProgress"}
             onClick={() => handleClick(key.toLowerCase())}
           >
@@ -57,6 +71,7 @@ export function Keyboard() {
           <Button
             size={"icon"}
             key={key}
+            className={cn(getKeyColor(key))}
             disabled={gamePhase != "inProgress"}
             onClick={() => handleClick(key.toLowerCase())}
           >
@@ -77,7 +92,7 @@ export function Keyboard() {
           onClick={() => {
             if (currentGuess.length !== 5) {
               toast.warning("Not enough letter!");
-              console.log(currentGuess)
+              console.log(currentGuess);
               return;
             } // Ensure guess is complete
             handleEnter();

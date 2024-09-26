@@ -49,7 +49,6 @@ const getColor = (result: string): string => {
       return "#6ca965";
     case "Present":
       return "#c8b653";
-    case "Miss":
     default:
       return "#787c7f";
   }

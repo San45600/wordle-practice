@@ -2,36 +2,28 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 // const wordList = ["apple", "brain", "flame", "crown", "light"]; // Example word list
-const wordList = ["qqqqq", "wwwww"];
+const wordList = ["qqqqq", "barbs"];
 
 type GamePhaseType = "preGame" | "inProgress" | "lost" | "won" | "initializing";
 
-interface SettingsState {
-  maximumRounds: number;
-
-  setMaximumRounds: (val: number) => void;
-}
-
-export const useSettingsState = create<SettingsState>()(
-  persist(
-    (set, get) => ({
-      maximumRounds: 6,
-      setMaximumRounds: (val) => set({ maximumRounds: val }),
-    }),
-    {
-      name: "settings-storage",
-    }
-  )
-);
-
 interface GameState {
+  maximumRound: number;
   answer: string;
   guessList: string[];
   currentGuess: string;
   currentRow: number;
+  resultHistory: Record<number, string[]>;
   gamePhase: GamePhaseType;
   openResultDialog: boolean;
+  presentedLetter: string[];
+  hitLetter: string[];
+  missLetter: string[];
 
+  pushPresentedLetter: (val: string) => void;
+  pushHitLetter: (val: string) => void;
+  pushMissLetter: (val: string) => void;
+
+  setMaximumRound: (val: number) => void;
   setAnswer: (val: string) => void;
   setGuessList: (val: string) => void;
   setCurrentGuess: (val: string) => void;
@@ -44,13 +36,34 @@ interface GameState {
 }
 
 export const useGameState = create<GameState>()((set, get) => ({
+  maximumRound: 6,
   answer: "",
   guessList: Array(6).fill(""),
   currentGuess: "",
   currentRow: 0,
+  resultHistory: Array(6).fill(Array(5).fill("")),
   gamePhase: "preGame",
   openResultDialog: false,
+  presentedLetter: [],
+  hitLetter: [],
+  missLetter: [],
 
+  pushPresentedLetter: (val) =>
+    set(({ presentedLetter }) => ({
+      presentedLetter: [...presentedLetter, val],
+    })),
+  pushHitLetter: (val) =>
+    set(({ hitLetter }) => ({ hitLetter: [...hitLetter, val] })),
+  pushMissLetter: (val) =>
+    set(({ missLetter }) => ({ missLetter: [...missLetter, val] })),
+
+  setMaximumRound: (val) => {
+    set({
+      maximumRound: val,
+      guessList: Array(val).fill(""),
+      resultHistory: Array(val).fill(Array(5).fill("")),
+    });
+  },
   setAnswer: (val) => set({ answer: val }),
   setGuessList: (val) =>
     set((state) => ({ guessList: [...state.guessList, val] })),
@@ -77,6 +90,9 @@ export const useGameState = create<GameState>()((set, get) => ({
         currentGuess: "",
         gamePhase: "inProgress",
         currentRow: 0,
+        presentedLetter: [],
+        hitLetter: [],
+        missLetter: [],
         answer: newWords[Math.floor(Math.random() * newWords.length)],
       });
     }, 1000);
@@ -84,15 +100,70 @@ export const useGameState = create<GameState>()((set, get) => ({
 
   // Function to handle events after pressing enter button
   handleEnter: () => {
-    const { currentRow, guessList, currentGuess } = get();
-    if (currentRow >= guessList.length) return;
-    if (currentGuess.length !== 5) return; // Ensure guess is complete
-    set((state) => ({
-      currentRow: state.currentRow + 1,
-      guessList: state.guessList.map((guess, index) =>
-        index === currentRow ? currentGuess : guess
-      ),
-      currentGuess: "", // Reset currentGuess after entering
-    }));
+    set((state) => {
+      const { currentGuess, answer } = state;
+      if (currentGuess.length !== 5) return state; // Ensure guess is complete
+
+      const newEvaluatedHitLetter = [...state.hitLetter];
+      const newEvaluatedPresentedLetter = [...state.presentedLetter];
+      const newEvaluatedMissLetter = [...state.missLetter];
+
+      // Create a copy of the answer to track remaining letters
+      const remainingLetters = answer.split("");
+      const result = Array(5).fill("");
+
+      // First pass: Mark exact matches (hits)
+      for (let i = 0; i < currentGuess.length; i++) {
+        const guessLetter = currentGuess[i].toLowerCase();
+        if (guessLetter === remainingLetters[i]) {
+          if (!newEvaluatedHitLetter.includes(guessLetter)) {
+            newEvaluatedHitLetter.push(guessLetter);
+          }
+          result[i] = "Hit";
+          remainingLetters[i] = ""; // Mark this letter as used
+        }
+      }
+
+      // Second pass: Check for presented and miss letters
+      for (let i = 0; i < currentGuess.length; i++) {
+        const guessLetter = currentGuess[i].toLowerCase();
+        if (guessLetter !== answer[i]) {
+          const indexInRemaining = remainingLetters.indexOf(guessLetter);
+          if (indexInRemaining !== -1) {
+            // Letter is present but in wrong position
+            if (
+              !newEvaluatedPresentedLetter.includes(guessLetter) &&
+              !newEvaluatedHitLetter.includes(guessLetter)
+            ) {
+              newEvaluatedPresentedLetter.push(guessLetter);
+            }
+            result[i] = "Present";
+            remainingLetters[indexInRemaining] = ""; // Mark this letter as used
+          } else {
+            // Letter is not in the word or all instances have been accounted for
+            if (
+              !newEvaluatedMissLetter.includes(guessLetter) &&
+              !newEvaluatedPresentedLetter.includes(guessLetter) &&
+              !newEvaluatedHitLetter.includes(guessLetter)
+            ) {
+              newEvaluatedMissLetter.push(guessLetter);
+            }
+          }
+        }
+      }
+
+      return {
+        // ... other state updates ...
+        hitLetter: newEvaluatedHitLetter,
+        presentedLetter: newEvaluatedPresentedLetter,
+        missLetter: newEvaluatedMissLetter,
+        currentRow: state.currentRow + 1,
+        resultHistory: { ...state.resultHistory, [state.currentRow]: result },
+        guessList: state.guessList.map((guess, index) =>
+          index === state.currentRow ? currentGuess : guess
+        ),
+        currentGuess: "", // Reset currentGuess after entering
+      };
+    });
   },
 }));
