@@ -12,14 +12,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
-import { Button } from "./ui/button";
+import { ResultDialog } from "./ResultDialog";
 
 const buttonClassName = "hover:text-green-500 w-fit";
-const maxRounds = 6; // Maximum number of guessList
 
 export function WordleGame() {
   const {
@@ -28,6 +25,7 @@ export function WordleGame() {
     answer,
     gamePhase,
     openResultDialog,
+    maximumRound,
     setOpenResultDialog,
     setGamePhase,
     currentRow,
@@ -66,7 +64,7 @@ export function WordleGame() {
                   <button
                     className={buttonClassName}
                     onClick={() => {
-                      initialize(maxRounds);
+                      initialize(maximumRound);
                     }}
                   >
                     Play
@@ -150,37 +148,13 @@ export function WordleGame() {
               transition={{
                 duration: 0.5,
               }}
-            ><CgSpinner className="animate-spin" size={32}/> Loading...</motion.div>
+            >
+              <CgSpinner className="animate-spin" size={32} /> Loading...
+            </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
-      <Dialog open={openResultDialog} onOpenChange={setOpenResultDialog}>
-        <DialogContent className="h-96 flex flex-col items-center">
-          <div className="text-4xl">Congratulations!</div>
-          <div>You guessed:</div>
-          <WordRow rowIndex={-1} word={answer} />
-          <div>Number of tries: {currentRow}</div>
-          <Button
-            className="w-64"
-            onClick={() => {
-              setOpenResultDialog(false);
-              initialize(maxRounds);
-            }}
-          >
-            Play another round!
-          </Button>
-          <Button
-            className="w-64"
-            variant={"secondary"}
-            onClick={() => {
-              setOpenResultDialog(false);
-              setGamePhase("preGame");
-            }}
-          >
-            Back to menu
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <ResultDialog />
     </>
   );
 }

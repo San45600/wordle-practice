@@ -19,6 +19,7 @@ export function WordRow({
     currentRow,
     gamePhase,
     resultHistory,
+    maximumRound,
     setGamePhase,
     setOpenResultDialog,
   } = useGameState();
@@ -41,6 +42,11 @@ export function WordRow({
     if (currentRow > rowIndex) {
       if (!!resultHistory[rowIndex]) setResult(resultHistory[rowIndex]);
       setFlipped(true);
+    }
+    if (gamePhase != "inProgress") return;
+    if (currentRow >= maximumRound) {
+        setGamePhase("lost");
+        setTimeout(() => setOpenResultDialog(true), 1500);
     }
   }, [currentRow]);
 
