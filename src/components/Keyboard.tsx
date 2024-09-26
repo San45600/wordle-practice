@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useGameState } from "./state/States";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -19,9 +19,24 @@ export function Keyboard() {
     handleEnter,
   } = useGameState();
 
-  const handleClick = (key: string) => {
-    if (currentGuess.length >= 5) return;
+  const currentGuessRef = useRef(currentGuess);
+
+  useEffect(() => {
+    currentGuessRef.current = currentGuess;
+  }, [currentGuess]);
+
+  const handleKeyPress = (key: string) => {
+    if (currentGuessRef.current.length >= 5) return;
     setCurrentGuess(key.toLowerCase());
+  };
+
+  const inputValidation = () => {
+    if (currentGuessRef.current.length !== 5) {
+      toast.warning("Not enough letters!");
+      console.log(currentGuessRef.current);
+      return false;
+    } // Ensure guess is complete
+    return true;
   };
 
   const getKeyColor = (key: string) => {
@@ -29,9 +44,31 @@ export function Keyboard() {
     if (presentedLetter.includes(key.toLowerCase()))
       return "bg-[#c8b653] text-white";
     if (missLetter.includes(key.toLowerCase()))
-        return "bg-[#787c7f] text-white";
+      return "bg-[#787c7f] text-white";
     return ""; // default color
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (gamePhase != "inProgress") return;
+      if (event.key === "Enter") {
+        if (inputValidation()) handleEnter();
+      } else if (event.key === "Backspace") {
+        setCurrentGuess("");
+      } else if (/^[a-z]$/i.test(event.key)) {
+        // Only allow A-Z
+        handleKeyPress(event.key);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    console.log("mounted");
+    // Cleanup the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      console.log("unmounted");
+    };
+  }, [gamePhase]);
 
   return (
     <div className="flex flex-col justify-center items-center gap-2 mt-8">
@@ -43,7 +80,7 @@ export function Keyboard() {
             key={key}
             className={cn(getKeyColor(key))}
             disabled={gamePhase != "inProgress"}
-            onClick={() => handleClick(key.toLowerCase())}
+            onClick={() => handleKeyPress(key.toLowerCase())}
           >
             {key}
           </Button>
@@ -58,7 +95,7 @@ export function Keyboard() {
             key={key}
             className={cn(getKeyColor(key))}
             disabled={gamePhase != "inProgress"}
-            onClick={() => handleClick(key.toLowerCase())}
+            onClick={() => handleKeyPress(key.toLowerCase())}
           >
             {key}
           </Button>
@@ -73,7 +110,7 @@ export function Keyboard() {
             key={key}
             className={cn(getKeyColor(key))}
             disabled={gamePhase != "inProgress"}
-            onClick={() => handleClick(key.toLowerCase())}
+            onClick={() => handleKeyPress(key.toLowerCase())}
           >
             {key}
           </Button>
@@ -90,12 +127,7 @@ export function Keyboard() {
         {/* Enter */}
         <Button
           onClick={() => {
-            if (currentGuess.length !== 5) {
-              toast.warning("Not enough letter!");
-              console.log(currentGuess);
-              return;
-            } // Ensure guess is complete
-            handleEnter();
+            if (inputValidation()) handleEnter();
           }}
           disabled={gamePhase != "inProgress"}
         >
