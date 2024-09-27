@@ -18,6 +18,8 @@ import { ResultDialog } from "./ResultDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { ScrollArea } from "./ui/scroll-area";
 import { SparklesAnimation } from "./SparklesAnimation";
+import { Separator } from "./ui/separator";
+import { FaGithub } from "react-icons/fa6";
 
 const buttonClassName = "hover:text-green-500 w-fit";
 
@@ -87,7 +89,26 @@ export function WordleGame() {
                   >
                     Settings
                   </button>
-                  <button className={buttonClassName}>GitHub</button>
+                  <div className={"absolute bottom-4 left-6 flex gap-2 items-center text-lg"}>
+                    <span>Made by</span>
+                    <a
+                      href="https://x.com/HoSan45600"
+                      className="text-[#A1A1AA] hover:text-white"
+                    >
+                      San Ho
+                    </a>
+                    <Separator
+                      orientation="vertical"
+                      className="h-6 bg-[#A1A1AA]"
+                    />
+                    <a
+                      href="https://github.com/San45600/wordle-practice"
+                      target="_blank"
+                      className="text-[#A1A1AA] hover:text-white"
+                    >
+                      <FaGithub size={24} />
+                    </a>
+                  </div>
                 </div>
               </motion.div>
 
