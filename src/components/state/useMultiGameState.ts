@@ -106,7 +106,7 @@ export const useMultiGameState = create<MultiGameState>()((set, get) => ({
       set({
         gamePhase: "initializing",
       });
-      const response = await fetch("/api/game/new", {
+      const response = await fetch("/api/multi/game/new", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -151,7 +151,7 @@ export const useMultiGameState = create<MultiGameState>()((set, get) => ({
   handleEnter: async () => {
     const { currentGuess } = get();
     try {
-      const response = await fetch("/api/game/check", {
+      const response = await fetch("/api/multi/game/check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

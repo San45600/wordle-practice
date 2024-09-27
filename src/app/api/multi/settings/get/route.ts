@@ -7,6 +7,5 @@ export async function GET() {
   return NextResponse.json({
     wordlist: settings.wordList,
     hardMode: settings.hardMode,
-    maximumRound: settings.maximumRound
   });
 }

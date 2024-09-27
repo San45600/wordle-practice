@@ -56,8 +56,14 @@ export async function POST(req: Request) {
       return hitCount * 100 + presentCount;
     };
 
+    let finalCandidate = [];
+      if (candidates.length === 0) {
+        finalCandidate = [...wordList]; // Initialize candidates with the full word list
+      } else {
+        finalCandidate = candidates;
+      }
 
-    let newCandidates = [...candidates];
+    let newCandidates = [...finalCandidate];
     let selectedResult: { candidate: string; result: ResultType[] };
 
     if (answer) {
@@ -69,7 +75,7 @@ export async function POST(req: Request) {
       newCandidates = [answer];
     } else {
       // Host cheating behavior
-      let results = candidates.map((candidate) => ({
+      let results = finalCandidate.map((candidate) => ({
         candidate,
         result: generateResult(guess, candidate),
       }));
@@ -89,7 +95,7 @@ export async function POST(req: Request) {
         ];
 
       // Filter candidates based on the selected result
-      newCandidates = candidates.filter(
+      newCandidates = finalCandidate.filter(
         (candidate) =>
           JSON.stringify(generateResult(guess, candidate)) ===
           JSON.stringify(selectedResult.result)

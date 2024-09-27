@@ -24,14 +24,21 @@ import {
 import { MdOutlineDeleteForever } from "react-icons/md";
 import { FaEllipsis, FaCircleQuestion } from "react-icons/fa6";
 import { useMultiGameState } from "../state/useMultiGameState";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "../ui/switch";
 import { Separator } from "../ui/separator";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Input } from "../ui/input";
 import { DragndropZone } from "../DragndropZone";
 import { Button } from "../ui/button";
+import { CgSpinner } from "react-icons/cg";
 
 export function MultiSettingsDialog() {
   const {
@@ -40,8 +47,11 @@ export function MultiSettingsDialog() {
     originalWordList,
     setOriginalHardMode,
     setOriginalWordList,
-    setOpenSettingsDialog
+    setOpenSettingsDialog,
   } = useMultiGameState();
+
+  const [settingsFetching, setWordlistFetching] = useState(false);
+  const [settingsFetchError, setWordlistFetchError] = useState(false);
 
   const [tempWordList, setTempWordList] = useState<string[]>(originalWordList);
   const [newWord, setNewWord] = useState("");
@@ -52,9 +62,31 @@ export function MultiSettingsDialog() {
       toast.error("Word list must contain at least one word");
       return false;
     }
-
     return true;
   };
+  const fetchWordList = async () => {
+    try {
+      setWordlistFetching(true);
+      const response = await fetch("/api/multi/settings/get");
+      const data = await response.json();
+      setTempWordList(data.wordlist);
+      setTempHardMode(data.hardMode);
+      setOriginalWordList(data.wordlist);
+      setOriginalHardMode(data.hardMode);
+      setWordlistFetching(false);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      toast.error(
+        "Error fetching the word list, check console for more detail."
+      );
+      setWordlistFetching(false);
+      setWordlistFetchError(true);
+    }
+  };
+
+  useEffect(() => {
+    fetchWordList();
+  }, []);
 
   return (
     <Sheet open={openSettingsDialog} onOpenChange={setOpenSettingsDialog}>
@@ -161,45 +193,57 @@ export function MultiSettingsDialog() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <CommandList>
-                <CommandEmpty>No words found.</CommandEmpty>
-                <CommandGroup>
-                  {tempWordList.map((val, index) => (
-                    <CommandItem key={index} className="flex justify-between">
-                      <span>{val}</span>
-                      <button
-                        onClick={() => {
-                          const newList = tempWordList.filter(
-                            (_, i) => i !== index
-                          );
-                          setTempWordList(newList);
-                        }}
-                      >
-                        <MdOutlineDeleteForever color="red" />
-                      </button>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
+              {settingsFetchError ? (
+                <div className="w-full flex flex-col gap-4 items-center justify-center mt-4">
+                  Error fetching wordlist
+                  <Button onClick={() => fetchWordList()}>Refetch</Button>
+                </div>
+              ) : settingsFetching ? (
+                <div className="w-full flex gap-2 justify-center mt-4">
+                  <CgSpinner className="animate-spin" size={24} /> Loading...
+                </div>
+              ) : (
+                <CommandList>
+                  <CommandEmpty>No words found.</CommandEmpty>
+                  <CommandGroup>
+                    {tempWordList.map((val, index) => (
+                      <CommandItem key={index} className="flex justify-between">
+                        <span>{val}</span>
+                        <button
+                          onClick={() => {
+                            const newList = tempWordList.filter(
+                              (_, i) => i !== index
+                            );
+                            setTempWordList(newList);
+                          }}
+                        >
+                          <MdOutlineDeleteForever color="red" />
+                        </button>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              )}
             </Command>
-            <div className="flex flex-col gap-2">
-              <DragndropZone
-                onFileChange={(file) => {
-                  var reader = new FileReader();
+            {!settingsFetching && !settingsFetchError && (
+              <div className="flex flex-col gap-2">
+                <DragndropZone
+                  onFileChange={(file) => {
+                    var reader = new FileReader();
 
-                  reader.onload = (e) => {
-                    if (!e.target) return;
-                    const data = JSON.parse(e.target.result as string);
-                    setTempWordList(data);
-                  };
-                  reader.readAsText(file);
-                }}
-              >
-                Drag and drop, or click here to import JSON word list.
-              </DragndropZone>
-              {/* <Button>Export words list to JSON</Button> */}
-            </div>
+                    reader.onload = (e) => {
+                      if (!e.target) return;
+                      const data = JSON.parse(e.target.result as string);
+                      setTempWordList(data);
+                    };
+                    reader.readAsText(file);
+                  }}
+                >
+                  Drag and drop, or click here to import JSON word list.
+                </DragndropZone>
+                {/* <Button>Export words list to JSON</Button> */}
+              </div>
+            )}
           </div>
         </div>
         <SheetFooter className="">
@@ -207,8 +251,10 @@ export function MultiSettingsDialog() {
             <Button
               variant={"ghost"}
               onClick={() => {
-                setTempWordList(originalWordList);
+                if (settingsFetchError || settingsFetching) return;
+
                 setTempHardMode(originalHardMode);
+                setTempWordList(originalWordList);
               }}
             >
               Cancel
@@ -216,16 +262,42 @@ export function MultiSettingsDialog() {
           </SheetClose>
           <SheetClose asChild>
             <Button
-              onClick={(e) => {
+              onClick={async (e) => {
                 if (validateSettings()) {
-                  setOriginalWordList(tempWordList);
-                  setOriginalHardMode(tempHardMode);
+                  try {
+                    const response = await fetch("/api/multi/settings/update", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        newWordList: tempWordList,
+                        mode: tempHardMode,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error("Failed to update settings");
+                    }
+
+                    toast.success("Settings updated successfully");
+                    setOpenSettingsDialog(false);
+                    fetchWordList();
+                  } catch (error) {
+                    console.error("Error updating settings:", error);
+                    toast.error("Failed to update settings. Please try again.");
+                    e.preventDefault(); // Prevent dialog from closing on error
+                  }
                 } else {
                   e.preventDefault();
                 }
               }}
             >
-              Save changes
+              {settingsFetching ? (
+                <CgSpinner className="animate-spin" />
+              ) : (
+                "Save changes"
+              )}
             </Button>
           </SheetClose>
         </SheetFooter>
