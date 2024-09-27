@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type GamePhaseType = "preGame" | "inProgress" | "lost" | "won" | "initializing";
+type ResultType = "Hit" | "Present" | "Miss";
 
 interface GameState {
   answer: string;
@@ -13,6 +14,9 @@ interface GameState {
   gamePhase: GamePhaseType;
   openResultDialog: boolean;
   openSettingsDialog: boolean;
+  wordList: string[];
+  hardMode: boolean;
+  candidates: string[];
   originalWordList: string[];
   originalHardMode: boolean;
   originalMaximumRound: number;
@@ -33,6 +37,9 @@ interface GameState {
   setGamePhase: (val: GamePhaseType) => void;
   setOpenResultDialog: (val: boolean) => void;
   setOpenSettingsDialog: (val: boolean) => void;
+  setWordList: (val: string[]) => void;
+  setHardMode: (val: boolean) => void;
+  setCandidates: (val: string[]) => void;
   setOriginalWordList: (val: string[]) => void;
   setOriginalHardMode: (val: boolean) => void;
 
@@ -52,6 +59,9 @@ export const useGameState = create<GameState>()((set, get) => ({
   presentedLetter: [],
   hitLetter: [],
   missLetter: [],
+  wordList: ["apple", "brain", "flame", "crown", "light"], // Example word list
+  hardMode: false,
+  candidates: [],
   originalWordList: [], // used for recovery when the user clicks cancel.
   originalHardMode: false,
   originalMaximumRound: 6,

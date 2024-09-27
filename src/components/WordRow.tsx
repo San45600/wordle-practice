@@ -21,6 +21,8 @@ export function WordRow({
     gamePhase,
     resultHistory,
     originalMaximumRound,
+    maximumRound,
+    candidates,
     setAnswer,
     setGamePhase,
     setOpenResultDialog,
