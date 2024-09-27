@@ -44,6 +44,7 @@ bun dev
 ```
  
 Open [http://localhost:3000](http://localhost:3000) to play single-player wordle.
+
 Open [http://localhost:3000/multiplayer](http://localhost:3000/multiplayer) to play multi-player wordle.
 
 ## Future Updates
