@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { getSettings } from "../../settings";
-import { initialize } from "../../gameManager";
+import { multiInitialize } from "../../multiGameManager";
 
 export async function GET() {
   try {
-    initialize();
+    multiInitialize();
 
     return NextResponse.json({ res: "ok" });
   } catch (error) {

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useGameState } from "./state/States";
+import { useGameState } from "./state/useGameState";
 import { LetterSquare } from "./LetterSquare";
 import { SparklesAnimation } from "./SparklesAnimation";
 import { toast } from "sonner";
@@ -21,8 +21,6 @@ export function WordRow({
     gamePhase,
     resultHistory,
     originalMaximumRound,
-    maximumRound,
-    candidates,
     setAnswer,
     setGamePhase,
     setOpenResultDialog,
@@ -43,13 +41,7 @@ export function WordRow({
 
   const fetchAnswer = async () => {
     try {
-      const response = await fetch("/api/game/get-answer", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ currentRow }),
-      });
+      const response = await fetch("/api/game/get-answer");
 
       if (!response.ok) {
         throw new Error("Failed to fetch answer");

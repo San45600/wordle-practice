@@ -1,37 +1,38 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { useGameState } from "./state/useGameState";
-import { WordRow } from "./WordRow";
+import { useMultiGameState } from "../state/useMultiGameState";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent } from "../ui/dialog";
+import { MultiWordRow } from "./MultiWordRow";
 
-export function ResultDialog({ callback }: { callback: () => void }) {
+
+export function MultiResultDialog({ callback }: { callback: () => void }) {
   const {
     answer,
     openResultDialog,
-    originalMaximumRound,
-    currentRow,
     gamePhase,
+    player1CurrentRow,
+    player2CurrentRow,
     setOpenResultDialog,
     setGamePhase,
     initialize,
-  } = useGameState();
+  } = useMultiGameState();
 
   return (
     <Dialog open={openResultDialog} onOpenChange={setOpenResultDialog}>
       <DialogContent className="h-96 flex flex-col items-center justify-evenly">
         <div className="text-4xl">
-          {gamePhase == "won" ? "Congratulations!" : "Better luck next time!"}
+          {gamePhase == "1won" ? "player1 won!" : gamePhase == "2won" ? "player2 won!" : "Time's up!"}
         </div>
-        <div>{gamePhase == "won" ? "You guessed:" : "The answer:"}</div>
-        <WordRow rowIndex={-1} word={answer} />
-        {gamePhase == "won" && <div>Number of tries: {currentRow}</div>}
+        <div>The answer:</div>
+        <MultiWordRow rowIndex={-1} word={answer} player={0} />
+         <div>Number of tries: {player1CurrentRow + player2CurrentRow}</div>
         <div className="flex flex-col gap-4">
           <Button
             className="w-64"
             onClick={() => {
               setOpenResultDialog(false);
-              initialize(originalMaximumRound);
+              initialize();
               callback();
             }}
           >

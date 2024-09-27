@@ -1,4 +1,4 @@
-import { getSettings } from "./settings";
+import { getMultiSettings } from "./multiSettings";
 
 let answer = "";
 
@@ -7,20 +7,20 @@ let presentedLetter: string[] = [];
 let missLetter: string[] = [];
 let candidates: string[] = []
 
-export const getGameData = () => {
+export const getMultiGameData = () => {
   return { answer, hitLetter, presentedLetter, missLetter, candidates };
 };
 
-export const updateAnswer = (ans: string) => {
+export const updateMultiAnswer = (ans: string) => {
   answer = ans
 }
 
-export const updateCandidates = (val: string[]) => {
+export const updateMultiCandidates = (val: string[]) => {
   candidates = val
 }
 
-export const initialize = () => {
-  const { wordList } = getSettings()
+export const multiInitialize = () => {
+  const { wordList } = getMultiSettings()
   candidates = wordList
   answer = ""
   hitLetter = [];

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSettings } from "../../settings";
-import { getGameData, initialize, updateAnswer, updateCandidates } from "../../gameManager";
+import { getMultiGameData, updateMultiAnswer, updateMultiCandidates } from "../../multiGameManager";
+import { getMultiSettings } from "../../multiSettings";
 
 type ResultType = "Hit" | "Present" | "Miss";
 
@@ -8,8 +8,8 @@ export async function POST(req: Request) {
   try {
     const { guess } = await req.json();
     const { answer, hitLetter, presentedLetter, missLetter, candidates } =
-      getGameData();
-    const { hardMode, wordList } = getSettings();
+      getMultiGameData();
+    const { hardMode, wordList } = getMultiSettings();
 
     // Validate the guess
     if (guess.length !== 5) {
@@ -99,9 +99,9 @@ export async function POST(req: Request) {
       if (newCandidates.length <= 100 && wordList.length >= 500) {
         const randomAnswer =
           newCandidates[Math.floor(Math.random() * newCandidates.length)];
-        updateAnswer(randomAnswer);
+        updateMultiAnswer(randomAnswer);
       } else if (newCandidates.length == 1) {
-        updateAnswer(newCandidates[0]);
+        updateMultiAnswer(newCandidates[0]);
       }
     }
 
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
       }
     });
 
-    updateCandidates(newCandidates)
+    updateMultiCandidates(newCandidates)
 
     return NextResponse.json({
       hitLetter: newHitLetter,

@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useGameState } from "./state/States";
+import { useGameState } from "./state/useGameState";
 import { Input } from "./ui/input";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";

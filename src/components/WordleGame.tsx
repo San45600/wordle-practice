@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { WordRow } from "./WordRow";
-import { useGameState } from "./state/States";
+import { useGameState } from "./state/useGameState";
 import { Keyboard } from "./Keyboard";
 import { MdMenu } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
