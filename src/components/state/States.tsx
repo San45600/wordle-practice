@@ -147,7 +147,8 @@ export const useGameState = create<GameState>()((set, get) => ({
     const calculateScore = (result: ResultType[]): number => {
       const hitCount = result.filter((f) => f === "Hit").length;
       const presentCount = result.filter((f) => f === "Present").length;
-      return hitCount * 2 + presentCount;
+      // Prioritize Hit count, then Present count
+      return hitCount * 100 + presentCount;
     };
 
     let newCandidates = [...candidates];
