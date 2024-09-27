@@ -180,6 +180,9 @@ export function SettingsDialog() {
                       } else if (!/^[a-z]{5}$/i.test(newWord.trim())) {
                         toast.error("Word must only contain letters a-z");
                         e.preventDefault();
+                      } else if (tempWordList.includes(newWord.trim())) {
+                        toast.error("Word already exists in the list");
+                        e.preventDefault();
                       } else {
                         setTempWordList([
                           ...tempWordList,
