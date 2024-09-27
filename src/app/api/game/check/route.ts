@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSettings } from "../../settings";
-import { getGameData, initialize, updateAnswer, updateCandidates } from "../../gameManager";
+import {
+  getGameData,
+  initialize,
+  updateAnswer,
+  updateCandidates,
+} from "../../gameManager";
 
 type ResultType = "Hit" | "Present" | "Miss";
 
@@ -56,7 +61,6 @@ export async function POST(req: Request) {
       return hitCount * 100 + presentCount;
     };
 
-
     let newCandidates = [...candidates];
     let selectedResult: { candidate: string; result: ResultType[] };
 
@@ -69,7 +73,13 @@ export async function POST(req: Request) {
       newCandidates = [answer];
     } else {
       // Host cheating behavior
-      let results = candidates.map((candidate) => ({
+      let finalCandidate = [];
+      if (candidates.length === 0) {
+        finalCandidate = [...wordList]; // Initialize candidates with the full word list
+      } else {
+        finalCandidate = candidates;
+      }
+      let results = finalCandidate.map((candidate) => ({
         candidate,
         result: generateResult(guess, candidate),
       }));
@@ -89,7 +99,7 @@ export async function POST(req: Request) {
         ];
 
       // Filter candidates based on the selected result
-      newCandidates = candidates.filter(
+      newCandidates = finalCandidate.filter(
         (candidate) =>
           JSON.stringify(generateResult(guess, candidate)) ===
           JSON.stringify(selectedResult.result)
@@ -130,7 +140,7 @@ export async function POST(req: Request) {
       }
     });
 
-    updateCandidates(newCandidates)
+    updateCandidates(newCandidates);
 
     return NextResponse.json({
       hitLetter: newHitLetter,
