@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGameData } from "../../gameManager";
 
-export async function POST(req: Request) {
+export async function GET() {
   try {
     const { answer } = getGameData();
 
