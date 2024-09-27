@@ -42,11 +42,6 @@ export function WordRow({
       if (!!resultHistory[rowIndex]) setResult(resultHistory[rowIndex]);
       setFlipped(true);
     } else setFlipped(false);
-    if (gamePhase != "inProgress") return;
-    if (currentRow >= maximumRound) {
-      setGamePhase("lost");
-      setTimeout(() => setOpenResultDialog(true), 1500);
-    }
   }, [currentRow]);
 
   useEffect(() => {
@@ -54,6 +49,9 @@ export function WordRow({
     if (result.every((result) => result === "Hit")) {
       setGamePhase("won");
       setTimeout(() => setOpenResultDialog(true), 2500);
+    } else if (currentRow >= maximumRound) {
+      setGamePhase("lost");
+      setTimeout(() => setOpenResultDialog(true), 1500);
     }
   }, [result]);
 
