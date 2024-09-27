@@ -12,32 +12,32 @@ The project is designed to be flexible and customizable, allowing players to imp
 
 ## Features
 
-	•	Configurable word list and round limits.
-	•	Multiple game modes (Normal, Host Cheating, Time Attack Multiplayer).
-	•	Real-time synchronization for multiplayer modes.
-	•	JSON-based word list import and export.
+•	Configurable word list and round limits.
+•	Multiple game modes (Normal, Host Cheating, Time Attack Multiplayer).
+•	Real-time synchronization for multiplayer modes.
+•	JSON-based word list import and export.
 
 ## Setup
 
-	1.	Clone the repository:
+1.	Clone the repository:
 
 ```bash
 git clone https://github.com/San45600/wordle-practice.git
 ```
 
-	2.	Navigate to the project directory:
+2.	Navigate to the project directory:
 
 ```bash
 cd wordle-practice
 ```
 
-	3.	Install dependencies:
+3.	Install dependencies:
 
  ```bash
 bun i
 ```
 
-	4.	Run the development server:
+4.	Run the development server:
 
  ```bash
 bun dev
@@ -48,8 +48,8 @@ Open [http://localhost:3000/multiplayer](http://localhost:3000/multiplayer) to p
 
 ## Future Updates
 
-	•	Export word list as JSON: Allow players to export their custom word lists as JSON files for storage or sharing.
-	•	JSON file validation: Ensure that imported word lists are correctly structured and valid before being used in the game.
+•	Export word list as JSON: Allow players to export their custom word lists as JSON files for storage or sharing.
+•	JSON file validation: Ensure that imported word lists are correctly structured and valid before being used in the game.
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
