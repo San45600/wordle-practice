@@ -60,7 +60,6 @@ export function DragndropZone({
         onDrop={(e) => {
           e.preventDefault();
           setIsEnter(false);
-          console.log(e.dataTransfer)
           const fileType = e.dataTransfer.files[0].type;
           if (!fileType.startsWith("application/json")) {
             toast.error("Please upload an JSON.");

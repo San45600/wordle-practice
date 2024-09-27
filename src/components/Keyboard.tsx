@@ -67,11 +67,9 @@ export function Keyboard() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    console.log("mounted");
     // Cleanup the event listener when the component unmounts
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      console.log("unmounted");
     };
   }, [gamePhase]);
 
