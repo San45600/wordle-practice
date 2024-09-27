@@ -15,6 +15,8 @@ export function Keyboard() {
     hitLetter,
     presentedLetter,
     missLetter,
+    hardMode,
+    wordList,
     setCurrentGuess,
     handleEnter,
   } = useGameState();
@@ -33,9 +35,12 @@ export function Keyboard() {
   const inputValidation = () => {
     if (currentGuessRef.current.length !== 5) {
       toast.warning("Not enough letters!");
-      console.log(currentGuessRef.current);
       return false;
     } // Ensure guess is complete
+    if (hardMode && !wordList.includes(currentGuessRef.current.toLowerCase())) {
+      toast.warning("Word not in list!");
+      return false;
+    }
     return true;
   };
 

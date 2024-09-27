@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MdAudioFile } from "react-icons/md";
+import { toast } from "sonner";
 
 export function DragndropZone({
   onFileChange,
@@ -62,7 +63,7 @@ export function DragndropZone({
           console.log(e.dataTransfer)
           const fileType = e.dataTransfer.files[0].type;
           if (!fileType.startsWith("application/json")) {
-            setError("Please upload an JSON.");
+            toast.error("Please upload an JSON.");
             setFile(undefined);
             return;
           }

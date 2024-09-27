@@ -14,6 +14,7 @@ interface GameState {
   openResultDialog: boolean;
   openSettingsDialog: boolean;
   wordList: string[];
+  hardMode: boolean;
 
   presentedLetter: string[];
   hitLetter: string[];
@@ -32,6 +33,7 @@ interface GameState {
   setOpenResultDialog: (val: boolean) => void;
   setOpenSettingsDialog: (val: boolean) => void;
   setWordList: (val: string[]) => void;
+  setHardMode: (val: boolean) => void;
 
   initialize: (rows: number) => void;
   handleEnter: () => void;
@@ -51,6 +53,7 @@ export const useGameState = create<GameState>()((set, get) => ({
   hitLetter: [],
   missLetter: [],
   wordList: ["apple", "brain", "flame", "crown", "light"], // Example word list
+  hardMode: false,
 
   pushPresentedLetter: (val) =>
     set(({ presentedLetter }) => ({
@@ -67,7 +70,7 @@ export const useGameState = create<GameState>()((set, get) => ({
       guessList: Array(val).fill(""),
       answer: "",
       resultHistory: Array(val).fill(Array(5).fill("")),
-      currentRow: 0
+      currentRow: 0,
     });
   },
   setAnswer: (val) => set({ answer: val }),
@@ -83,6 +86,7 @@ export const useGameState = create<GameState>()((set, get) => ({
   setOpenResultDialog: (val) => set({ openResultDialog: val }),
   setOpenSettingsDialog: (val) => set({ openSettingsDialog: val }),
   setWordList: (val) => set({ wordList: val }),
+  setHardMode: (val) => set({ hardMode: val }),
 
   initialize: (rows) => {
     const { answer, wordList } = get();

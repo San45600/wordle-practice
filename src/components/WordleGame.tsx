@@ -27,9 +27,10 @@ export function WordleGame() {
     answer,
     gamePhase,
     maximumRound,
+    currentRow,
+    hardMode,
     setOpenSettingsDialog,
     setGamePhase,
-    currentRow,
     initialize,
   } = useGameState();
 
@@ -143,6 +144,12 @@ export function WordleGame() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {hardMode && (
+                <div className="fixed top-[65px] left-32 h-8 flex justify-center items-center uppercase text-red-500">
+                  Hard
+                </div>
+              )}
 
               <div
                 ref={scrollAreaRef}

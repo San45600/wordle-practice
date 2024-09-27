@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
 export function LetterSquare({
   letter,
@@ -38,11 +37,6 @@ export function LetterSquare({
   );
 }
 
-const colorMap: { [key: string]: string } = {
-  Hit: "#6ca965",
-  Present: "#c8b653",
-  default: "#18181b",
-};
 const getColor = (result: string): string => {
   switch (result) {
     case "Hit":
