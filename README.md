@@ -48,8 +48,8 @@ Open [http://localhost:3000/multiplayer](http://localhost:3000/multiplayer) to p
 
 ## Future Updates
 
-•	Export word list as JSON: Allow players to export their custom word lists as JSON files for storage or sharing.
-•	JSON file validation: Ensure that imported word lists are correctly structured and valid before being used in the game.
+	•	Export word list as JSON: Allow players to export their custom word lists as JSON files for storage or sharing.
+	•	JSON file validation: Ensure that imported word lists are correctly structured and valid before being used in the game.
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
