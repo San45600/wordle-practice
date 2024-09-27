@@ -1,10 +1,10 @@
+import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type GamePhaseType = "preGame" | "inProgress" | "lost" | "won" | "initializing";
 
 interface GameState {
-  maximumRound: number;
   answer: string;
   guessList: string[];
   currentGuess: string;
@@ -15,6 +15,7 @@ interface GameState {
   openSettingsDialog: boolean;
   originalWordList: string[];
   originalHardMode: boolean;
+  originalMaximumRound: number;
 
   presentedLetter: string[];
   hitLetter: string[];
@@ -24,7 +25,7 @@ interface GameState {
   pushHitLetter: (val: string) => void;
   pushMissLetter: (val: string) => void;
 
-  setMaximumRound: (val: number) => void;
+  setOriginalMaximumRound: (val: number) => void;
   setAnswer: (val: string) => void;
   setGuessList: (val: string) => void;
   setCurrentGuess: (val: string) => void;
@@ -40,7 +41,6 @@ interface GameState {
 }
 
 export const useGameState = create<GameState>()((set, get) => ({
-  maximumRound: 6,
   answer: "",
   guessList: Array(6).fill(""),
   currentGuess: "",
@@ -54,6 +54,7 @@ export const useGameState = create<GameState>()((set, get) => ({
   missLetter: [],
   originalWordList: [], // used for recovery when the user clicks cancel.
   originalHardMode: false,
+  originalMaximumRound: 6,
 
   pushPresentedLetter: (val) =>
     set(({ presentedLetter }) => ({
@@ -64,9 +65,9 @@ export const useGameState = create<GameState>()((set, get) => ({
   pushMissLetter: (val) =>
     set(({ missLetter }) => ({ missLetter: [...missLetter, val] })),
 
-  setMaximumRound: (val) => {
+  setOriginalMaximumRound: (val) => {
     set({
-      maximumRound: val,
+      originalMaximumRound: val,
       guessList: Array(val).fill(""),
       answer: "",
       resultHistory: Array(val).fill(Array(5).fill("")),
@@ -88,94 +89,82 @@ export const useGameState = create<GameState>()((set, get) => ({
   setOriginalWordList: (val) => set({ originalWordList: val }),
   setOriginalHardMode: (val) => set({ originalHardMode: val }),
 
-  initialize: (rows) => {
-    // const { answer, wordList } = get();
-    // const newWords = wordList.filter((word) => word !== (answer ?? ""));
+  initialize: async (rows) => {
+    try {
+      set({
+        gamePhase: "initializing",
+      });
+      const response = await fetch("/api/game/new", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    // set({
-    //   gamePhase: "initializing",
-    // });
+      if (!response.ok) {
+        throw new Error("Failed to start new game");
+      }
 
-    // setTimeout(() => {
-    //   set({
-    //     guessList: Array(rows).fill(""),
-    //     currentGuess: "",
-    //     gamePhase: "inProgress",
-    //     currentRow: 0,
-    //     presentedLetter: [],
-    //     hitLetter: [],
-    //     missLetter: [],
-    //     answer: newWords[Math.floor(Math.random() * newWords.length)],
-    //   });
-    // }, 1000);
+      const { res } = await response.json();
+
+      if (res != "ok") {
+        throw new Error("Failed to create answer for the game");
+      }
+
+      setTimeout(() => {
+        set({
+          guessList: Array(rows).fill(""),
+          currentGuess: "",
+          gamePhase: "inProgress",
+          currentRow: 0,
+          presentedLetter: [],
+          hitLetter: [],
+          missLetter: [],
+        });
+      }, 500);
+    } catch (error) {
+      console.error("Error initializing game:", error);
+      toast.error("Error initializing game");
+      set({ gamePhase: "preGame" });
+    }
   },
 
   // Function to handle events after pressing enter button
-  handleEnter: () => {
-    set((state) => {
-      const { currentGuess, answer } = state;
-      if (currentGuess.length !== 5) return state; // Ensure guess is complete
+  handleEnter: async () => {
+    const { currentGuess } = get();
+    try {
+      const response = await fetch("/api/game/check", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ guess: currentGuess }),
+      });
 
-      const newEvaluatedHitLetter = [...state.hitLetter];
-      const newEvaluatedPresentedLetter = [...state.presentedLetter];
-      const newEvaluatedMissLetter = [...state.missLetter];
-
-      // Create a copy of the answer to track remaining letters
-      const remainingLetters = answer.split("");
-      const result = Array(5).fill("");
-
-      // First pass: Mark exact matches (hits)
-      for (let i = 0; i < currentGuess.length; i++) {
-        const guessLetter = currentGuess[i].toLowerCase();
-        if (guessLetter === remainingLetters[i]) {
-          if (!newEvaluatedHitLetter.includes(guessLetter)) {
-            newEvaluatedHitLetter.push(guessLetter);
-          }
-          result[i] = "Hit";
-          remainingLetters[i] = ""; // Mark this letter as used
-        }
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
       }
 
-      // Second pass: Check for presented and miss letters
-      for (let i = 0; i < currentGuess.length; i++) {
-        const guessLetter = currentGuess[i].toLowerCase();
-        if (guessLetter !== answer[i]) {
-          const indexInRemaining = remainingLetters.indexOf(guessLetter);
-          if (indexInRemaining !== -1) {
-            // Letter is present but in wrong position
-            if (
-              !newEvaluatedPresentedLetter.includes(guessLetter) &&
-              !newEvaluatedHitLetter.includes(guessLetter)
-            ) {
-              newEvaluatedPresentedLetter.push(guessLetter);
-            }
-            result[i] = "Present";
-            remainingLetters[indexInRemaining] = ""; // Mark this letter as used
-          } else {
-            // Letter is not in the word or all instances have been accounted for
-            if (
-              !newEvaluatedMissLetter.includes(guessLetter) &&
-              !newEvaluatedPresentedLetter.includes(guessLetter) &&
-              !newEvaluatedHitLetter.includes(guessLetter)
-            ) {
-              newEvaluatedMissLetter.push(guessLetter);
-            }
-          }
-        }
-      }
+      const { hitLetter, presentedLetter, missLetter, result } =
+        await response.json();
 
-      return {
-        // ... other state updates ...
-        hitLetter: newEvaluatedHitLetter,
-        presentedLetter: newEvaluatedPresentedLetter,
-        missLetter: newEvaluatedMissLetter,
-        currentRow: state.currentRow + 1,
-        resultHistory: { ...state.resultHistory, [state.currentRow]: result },
-        guessList: state.guessList.map((guess, index) =>
-          index === state.currentRow ? currentGuess : guess
-        ),
-        currentGuess: "", // Reset currentGuess after entering
-      };
-    });
+      set((state) => {
+        return {
+          hitLetter: [...state.hitLetter, ...hitLetter],
+          presentedLetter: [...state.presentedLetter, ...presentedLetter],
+          missLetter: [...state.missLetter, ...missLetter],
+          currentRow: state.currentRow + 1,
+          resultHistory: { ...state.resultHistory, [state.currentRow]: result },
+          guessList: state.guessList.map((guess, index) =>
+            index === state.currentRow ? currentGuess : guess
+          ),
+          currentGuess: "", // Reset currentGuess after entering
+        };
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error(String((error as Error).message));
+    }
   },
 }));

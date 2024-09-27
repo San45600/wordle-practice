@@ -1,12 +1,12 @@
 import { getSettings } from "../../settings";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   const settings = getSettings();
 
-  return new Response(
-    JSON.stringify({
-      wordlist: settings.wordList,
-      hardMode: settings.hardMode,
-    })
-  );
+  return NextResponse.json({
+    wordlist: settings.wordList,
+    hardMode: settings.hardMode,
+    maximumRound: settings.maximumRound
+  });
 }

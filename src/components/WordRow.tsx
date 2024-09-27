@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameState } from "./state/States";
 import { LetterSquare } from "./LetterSquare";
 import { SparklesAnimation } from "./SparklesAnimation";
+import { toast } from "sonner";
 
 export function WordRow({
   rowIndex,
@@ -19,7 +20,8 @@ export function WordRow({
     currentRow,
     gamePhase,
     resultHistory,
-    maximumRound,
+    originalMaximumRound,
+    setAnswer,
     setGamePhase,
     setOpenResultDialog,
   } = useGameState();
@@ -37,6 +39,30 @@ export function WordRow({
     return "";
   }, [guessList, currentGuess, currentRow, rowIndex]);
 
+  const fetchAnswer = async () => {
+    try {
+      const response = await fetch("/api/game/get-answer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currentRow }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch answer");
+      }
+
+      const data = await response.json();
+
+      setAnswer(data.answer);
+      setTimeout(() => setOpenResultDialog(true), 1500);
+    } catch (error) {
+      console.error("Error fetching answer:", error);
+      toast.error("Failed to get game result. Please try again.");
+    }
+  };
+
   useEffect(() => {
     if (currentRow > rowIndex) {
       if (!!resultHistory[rowIndex]) setResult(resultHistory[rowIndex]);
@@ -48,10 +74,11 @@ export function WordRow({
     if (gamePhase != "inProgress") return;
     if (result.every((result) => result === "Hit")) {
       setGamePhase("won");
+      setAnswer(guessList[rowIndex]);
       setTimeout(() => setOpenResultDialog(true), 2500);
-    } else if (currentRow >= maximumRound) {
+    } else if (currentRow >= originalMaximumRound) {
       setGamePhase("lost");
-      setTimeout(() => setOpenResultDialog(true), 1500);
+      fetchAnswer();
     }
   }, [result]);
 

@@ -1,13 +1,12 @@
 import { updateSettings } from "../../settings";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const { newWordList, mode } = await req.json();
+  const { newWordList, mode, newMaximumRound } = await req.json();
 
-  updateSettings({ newWordList, mode });
+  updateSettings({ newWordList, mode, newMaximumRound });
 
-  return new Response(
-    JSON.stringify({
-      res: "ok",
-    })
-  );
+  return NextResponse.json({
+    res: "ok",
+  });
 }

@@ -9,7 +9,7 @@ export function ResultDialog({ callback }: { callback: () => void }) {
   const {
     answer,
     openResultDialog,
-    maximumRound,
+    originalMaximumRound,
     currentRow,
     gamePhase,
     setOpenResultDialog,
@@ -31,7 +31,7 @@ export function ResultDialog({ callback }: { callback: () => void }) {
             className="w-64"
             onClick={() => {
               setOpenResultDialog(false);
-              initialize(maximumRound);
+              initialize(originalMaximumRound);
               callback();
             }}
           >

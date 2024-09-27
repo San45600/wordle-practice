@@ -15,8 +15,6 @@ export function Keyboard() {
     hitLetter,
     presentedLetter,
     missLetter,
-    hardMode,
-    wordList,
     setCurrentGuess,
     handleEnter,
   } = useGameState();
@@ -32,18 +30,6 @@ export function Keyboard() {
     setCurrentGuess(key.toLowerCase());
   };
 
-  const inputValidation = () => {
-    if (currentGuessRef.current.length !== 5) {
-      toast.warning("Not enough letters!");
-      return false;
-    } // Ensure guess is complete
-    if (hardMode && !wordList.includes(currentGuessRef.current.toLowerCase())) {
-      toast.warning("Word not in list!");
-      return false;
-    }
-    return true;
-  };
-
   const getKeyColor = (key: string) => {
     if (hitLetter.includes(key.toLowerCase())) return "bg-[#6ca965] text-white";
     if (presentedLetter.includes(key.toLowerCase()))
@@ -57,7 +43,7 @@ export function Keyboard() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (gamePhase != "inProgress") return;
       if (event.key === "Enter") {
-        if (inputValidation()) handleEnter();
+        handleEnter();
       } else if (event.key === "Backspace") {
         setCurrentGuess("");
       } else if (/^[a-z]$/i.test(event.key)) {
@@ -67,11 +53,9 @@ export function Keyboard() {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    console.log("mounted");
     // Cleanup the event listener when the component unmounts
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      console.log("unmounted");
     };
   }, [gamePhase]);
 
@@ -132,7 +116,7 @@ export function Keyboard() {
         {/* Enter */}
         <Button
           onClick={() => {
-            if (inputValidation()) handleEnter();
+            handleEnter();
           }}
           disabled={gamePhase != "inProgress"}
         >

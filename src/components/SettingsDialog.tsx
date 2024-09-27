@@ -43,16 +43,16 @@ import { CgSpinner } from "react-icons/cg";
 export function SettingsDialog() {
   const {
     openSettingsDialog,
-    maximumRound,
+    originalMaximumRound,
     originalWordList,
     originalHardMode,
     setOriginalHardMode,
     setOriginalWordList,
     setOpenSettingsDialog,
-    setMaximumRound,
+    setOriginalMaximumRound,
   } = useGameState();
 
-  const [tempMaximumRound, setTempMaximumRound] = useState(maximumRound);
+  const [tempMaximumRound, setTempMaximumRound] = useState(6);
   const [tempWordList, setTempWordList] = useState<string[]>([]);
   const [newWord, setNewWord] = useState("");
   const [tempHardMode, setTempHardMode] = useState(false);
@@ -79,8 +79,10 @@ export function SettingsDialog() {
       const data = await response.json();
       setTempWordList(data.wordlist);
       setTempHardMode(data.hardMode);
+      setTempMaximumRound(data.maximumRound)
       setOriginalWordList(data.wordlist);
       setOriginalHardMode(data.hardMode);
+      setOriginalMaximumRound(data.maximumRound)
       setWordlistFetching(false);
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -272,7 +274,7 @@ export function SettingsDialog() {
               onClick={() => {
                 if (settingsFetchError || settingsFetching) return;
 
-                setTempMaximumRound(maximumRound);
+                setTempMaximumRound(originalMaximumRound);
                 setTempHardMode(originalHardMode);
                 setTempWordList(originalWordList);
               }}
@@ -294,14 +296,13 @@ export function SettingsDialog() {
                       body: JSON.stringify({
                         newWordList: tempWordList,
                         mode: tempHardMode,
+                        newMaximumRound: tempMaximumRound
                       }),
                     });
 
                     if (!response.ok) {
                       throw new Error("Failed to update settings");
                     }
-
-                    setMaximumRound(tempMaximumRound);
 
                     toast.success("Settings updated successfully");
                     setOpenSettingsDialog(false);
