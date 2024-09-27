@@ -13,8 +13,8 @@ interface GameState {
   gamePhase: GamePhaseType;
   openResultDialog: boolean;
   openSettingsDialog: boolean;
-  wordList: string[];
-  hardMode: boolean;
+  originalWordList: string[];
+  originalHardMode: boolean;
 
   presentedLetter: string[];
   hitLetter: string[];
@@ -32,8 +32,8 @@ interface GameState {
   setGamePhase: (val: GamePhaseType) => void;
   setOpenResultDialog: (val: boolean) => void;
   setOpenSettingsDialog: (val: boolean) => void;
-  setWordList: (val: string[]) => void;
-  setHardMode: (val: boolean) => void;
+  setOriginalWordList: (val: string[]) => void;
+  setOriginalHardMode: (val: boolean) => void;
 
   initialize: (rows: number) => void;
   handleEnter: () => void;
@@ -52,8 +52,8 @@ export const useGameState = create<GameState>()((set, get) => ({
   presentedLetter: [],
   hitLetter: [],
   missLetter: [],
-  wordList: ["apple", "brain", "flame", "crown", "light"], // Example word list
-  hardMode: false,
+  originalWordList: [], // used for recovery when the user clicks cancel.
+  originalHardMode: false,
 
   pushPresentedLetter: (val) =>
     set(({ presentedLetter }) => ({
@@ -85,29 +85,29 @@ export const useGameState = create<GameState>()((set, get) => ({
   setGamePhase: (val) => set({ gamePhase: val }),
   setOpenResultDialog: (val) => set({ openResultDialog: val }),
   setOpenSettingsDialog: (val) => set({ openSettingsDialog: val }),
-  setWordList: (val) => set({ wordList: val }),
-  setHardMode: (val) => set({ hardMode: val }),
+  setOriginalWordList: (val) => set({ originalWordList: val }),
+  setOriginalHardMode: (val) => set({ originalHardMode: val }),
 
   initialize: (rows) => {
-    const { answer, wordList } = get();
-    const newWords = wordList.filter((word) => word !== (answer ?? ""));
+    // const { answer, wordList } = get();
+    // const newWords = wordList.filter((word) => word !== (answer ?? ""));
 
-    set({
-      gamePhase: "initializing",
-    });
+    // set({
+    //   gamePhase: "initializing",
+    // });
 
-    setTimeout(() => {
-      set({
-        guessList: Array(rows).fill(""),
-        currentGuess: "",
-        gamePhase: "inProgress",
-        currentRow: 0,
-        presentedLetter: [],
-        hitLetter: [],
-        missLetter: [],
-        answer: newWords[Math.floor(Math.random() * newWords.length)],
-      });
-    }, 1000);
+    // setTimeout(() => {
+    //   set({
+    //     guessList: Array(rows).fill(""),
+    //     currentGuess: "",
+    //     gamePhase: "inProgress",
+    //     currentRow: 0,
+    //     presentedLetter: [],
+    //     hitLetter: [],
+    //     missLetter: [],
+    //     answer: newWords[Math.floor(Math.random() * newWords.length)],
+    //   });
+    // }, 1000);
   },
 
   // Function to handle events after pressing enter button
