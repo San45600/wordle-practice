@@ -42,16 +42,13 @@ import { Switch } from "./ui/switch";
 export function SettingsDialog() {
   const {
     openSettingsDialog,
-    maximumRound,
     wordList,
     hardMode,
     setHardMode,
     setWordList,
     setOpenSettingsDialog,
-    setMaximumRound,
   } = useGameState();
 
-  const [tempMaximumRound, setTempMaximumRound] = useState(maximumRound);
   const [tempWordList, setTempWordList] = useState<string[]>(wordList);
   const [newWord, setNewWord] = useState("");
   const [tempHardMode, setTempHardMode] = useState(hardMode);
@@ -59,10 +56,6 @@ export function SettingsDialog() {
   const validateSettings = () => {
     if (tempWordList.length === 0) {
       toast.error("Word list must contain at least one word");
-      return false;
-    }
-    if (tempMaximumRound <= 0) {
-      toast.error("Maximum round must be greater than 0");
       return false;
     }
     return true;
@@ -77,16 +70,6 @@ export function SettingsDialog() {
       >
         <div className="flex flex-col gap-4">
           <SheetTitle></SheetTitle>
-          <div className="flex gap-4 items-center">
-            Maximum round:
-            <Input
-              className="w-36"
-              value={tempMaximumRound}
-              onChange={(e) => setTempMaximumRound(Number(e.target.value))}
-              type="number"
-              placeholder="rounds..."
-            />
-          </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span>Hard Mode</span>
@@ -230,7 +213,6 @@ export function SettingsDialog() {
             <Button
               variant={"ghost"}
               onClick={() => {
-                setTempMaximumRound(maximumRound);
                 setTempWordList(wordList);
                 setTempHardMode(hardMode);
               }}
@@ -242,7 +224,6 @@ export function SettingsDialog() {
             <Button
               onClick={(e) => {
                 if (validateSettings()) {
-                  setMaximumRound(tempMaximumRound);
                   setWordList(tempWordList);
                   setHardMode(tempHardMode);
                 } else {

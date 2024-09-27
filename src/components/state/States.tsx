@@ -1,20 +1,31 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type GamePhaseType = "preGame" | "inProgress" | "lost" | "won" | "initializing";
+type GamePhaseType =
+  | "preGame"
+  | "inProgress"
+  | "lost"
+  | "1won"
+  | "2won"
+  | "initializing";
 
 interface GameState {
-  maximumRound: number;
   answer: string;
-  guessList: string[];
+  player1GuessList: string[];
+  player2GuessList: string[];
   currentGuess: string;
-  currentRow: number;
-  resultHistory: Record<number, string[]>;
+  player1CurrentRow: number;
+  player2CurrentRow: number;
+  player1ResultHistory: Record<number, string[]>;
+  player2ResultHistory: Record<number, string[]>;
   gamePhase: GamePhaseType;
   openResultDialog: boolean;
   openSettingsDialog: boolean;
   wordList: string[];
   hardMode: boolean;
+  playerControlling: number;
+  isTimerRunning: boolean;
+  cardText: string;
 
   presentedLetter: string[];
   hitLetter: string[];
@@ -24,28 +35,31 @@ interface GameState {
   pushHitLetter: (val: string) => void;
   pushMissLetter: (val: string) => void;
 
-  setMaximumRound: (val: number) => void;
   setAnswer: (val: string) => void;
-  setGuessList: (val: string) => void;
   setCurrentGuess: (val: string) => void;
-  setCurrentRow: (val: number) => void;
+  setCurrentRow: (val: number, player: number) => void;
   setGamePhase: (val: GamePhaseType) => void;
   setOpenResultDialog: (val: boolean) => void;
   setOpenSettingsDialog: (val: boolean) => void;
   setWordList: (val: string[]) => void;
   setHardMode: (val: boolean) => void;
+  setPlayerControlling: (val: number) => void;
+  setTimerRunning: (val: boolean) => void;
+  setCardText: (val: string) => void;
 
-  initialize: (rows: number) => void;
+  initialize: () => void;
   handleEnter: () => void;
 }
 
 export const useGameState = create<GameState>()((set, get) => ({
-  maximumRound: 6,
   answer: "",
-  guessList: Array(6).fill(""),
+  player1GuessList: Array(2).fill(""),
+  player2GuessList: Array(2).fill(""),
   currentGuess: "",
-  currentRow: 0,
-  resultHistory: Array(6).fill(Array(5).fill("")),
+  player1CurrentRow: 0,
+  player2CurrentRow: 0,
+  player1ResultHistory: {},
+  player2ResultHistory: {},
   gamePhase: "preGame",
   openResultDialog: false,
   openSettingsDialog: false,
@@ -54,6 +68,9 @@ export const useGameState = create<GameState>()((set, get) => ({
   missLetter: [],
   wordList: ["apple", "brain", "flame", "crown", "light"], // Example word list
   hardMode: false,
+  playerControlling: 1,
+  isTimerRunning: false,
+  cardText: "",
 
   pushPresentedLetter: (val) =>
     set(({ presentedLetter }) => ({
@@ -64,31 +81,25 @@ export const useGameState = create<GameState>()((set, get) => ({
   pushMissLetter: (val) =>
     set(({ missLetter }) => ({ missLetter: [...missLetter, val] })),
 
-  setMaximumRound: (val) => {
-    set({
-      maximumRound: val,
-      guessList: Array(val).fill(""),
-      answer: "",
-      resultHistory: Array(val).fill(Array(5).fill("")),
-      currentRow: 0,
-    });
-  },
   setAnswer: (val) => set({ answer: val }),
-  setGuessList: (val) =>
-    set((state) => ({ guessList: [...state.guessList, val] })),
   setCurrentGuess: (val) => {
     if (val == "")
       set(({ currentGuess }) => ({ currentGuess: currentGuess.slice(0, -1) }));
     else set(({ currentGuess }) => ({ currentGuess: currentGuess + val }));
   },
-  setCurrentRow: (val) => set({ currentRow: val }),
+  setCurrentRow: (val, player) => {
+    set({ [`player${player}CurrentRow`]: val });
+  },
   setGamePhase: (val) => set({ gamePhase: val }),
   setOpenResultDialog: (val) => set({ openResultDialog: val }),
   setOpenSettingsDialog: (val) => set({ openSettingsDialog: val }),
   setWordList: (val) => set({ wordList: val }),
   setHardMode: (val) => set({ hardMode: val }),
+  setPlayerControlling: (val) => set({ playerControlling: val }),
+  setTimerRunning: (val) => set({ isTimerRunning: val }),
+  setCardText: (val) => set({ cardText: val }),
 
-  initialize: (rows) => {
+  initialize: () => {
     const { answer, wordList } = get();
     const newWords = wordList.filter((word) => word !== (answer ?? ""));
 
@@ -98,10 +109,16 @@ export const useGameState = create<GameState>()((set, get) => ({
 
     setTimeout(() => {
       set({
-        guessList: Array(rows).fill(""),
+        player1GuessList: Array(2).fill(""),
+        player2GuessList: Array(2).fill(""),
         currentGuess: "",
         gamePhase: "inProgress",
-        currentRow: 0,
+        player1CurrentRow: 0,
+        player2CurrentRow: 0,
+        playerControlling: 1,
+        isTimerRunning: false,
+        cardText: "Ready?",
+
         presentedLetter: [],
         hitLetter: [],
         missLetter: [],
@@ -114,6 +131,7 @@ export const useGameState = create<GameState>()((set, get) => ({
   handleEnter: () => {
     set((state) => {
       const { currentGuess, answer } = state;
+
       if (currentGuess.length !== 5) return state; // Ensure guess is complete
 
       const newEvaluatedHitLetter = [...state.hitLetter];
@@ -164,17 +182,38 @@ export const useGameState = create<GameState>()((set, get) => ({
         }
       }
 
+      const playerRow =
+        state.playerControlling == 1
+          ? "player1CurrentRow"
+          : "player2CurrentRow";
+      const playerResultHistory =
+        state.playerControlling == 1
+          ? "player1ResultHistory"
+          : "player2ResultHistory";
+      const playerGuessList =
+        state.playerControlling == 1 ? "player1GuessList" : "player2GuessList";
+
+      const playerRowValue = state[playerRow];
+
+      let newGuessList = state[playerGuessList].map((guess, index) =>
+        index === state[playerRow] ? currentGuess : guess
+      );
+
+      newGuessList.push(""); // Add an empty string to increase the length by 1
+
       return {
         // ... other state updates ...
         hitLetter: newEvaluatedHitLetter,
         presentedLetter: newEvaluatedPresentedLetter,
         missLetter: newEvaluatedMissLetter,
-        currentRow: state.currentRow + 1,
-        resultHistory: { ...state.resultHistory, [state.currentRow]: result },
-        guessList: state.guessList.map((guess, index) =>
-          index === state.currentRow ? currentGuess : guess
-        ),
+        [playerRow]: state[playerRow] + 1,
+        [playerResultHistory]: {
+          ...state[playerResultHistory],
+          [playerRowValue]: result,
+        },
+        [playerGuessList]: newGuessList,
         currentGuess: "", // Reset currentGuess after entering
+        playerControlling: state.playerControlling == 1 ? 2 : 1,
       };
     });
   },

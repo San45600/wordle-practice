@@ -8,50 +8,71 @@ import { SparklesAnimation } from "./SparklesAnimation";
 
 export function WordRow({
   rowIndex,
+  player,
   word,
 }: {
   rowIndex: number;
+  player: number;
   word?: string;
 }) {
   const {
-    guessList,
+    player1GuessList,
+    player2GuessList,
     currentGuess,
-    currentRow,
+    playerControlling,
+    player1CurrentRow,
+    player2CurrentRow,
     gamePhase,
-    resultHistory,
-    maximumRound,
+    player1ResultHistory,
+    player2ResultHistory,
     setGamePhase,
+    setTimerRunning,
     setOpenResultDialog,
+    setCardText
   } = useGameState();
 
   const [flipped, setFlipped] = useState<boolean>(false);
   const [result, setResult] = useState<string[]>(Array(5).fill(""));
 
+  const currentRow = player == 1 ? player1CurrentRow : player2CurrentRow;
+  const currentGuessList = player == 1 ? player1GuessList : player2GuessList;
+
+
   const displayedGuess = useMemo(() => {
     if (word) return word;
     if (rowIndex < currentRow) {
-      return guessList[rowIndex] || "";
-    } else if (rowIndex === currentRow) {
+      return currentGuessList[rowIndex] || "";
+    } else if (playerControlling != player) return "";
+    else if (rowIndex === currentRow) {
       return currentGuess;
     }
     return "";
-  }, [guessList, currentGuess, currentRow, rowIndex]);
+  }, [currentGuessList, currentGuess, currentRow, rowIndex]);
 
   useEffect(() => {
     if (currentRow > rowIndex) {
-      if (!!resultHistory[rowIndex]) setResult(resultHistory[rowIndex]);
+      const resultHistory =
+        player === 1 ? player1ResultHistory : player2ResultHistory;
+      if (resultHistory[rowIndex]) {
+        setResult(resultHistory[rowIndex]);
+      }
       setFlipped(true);
     } else setFlipped(false);
   }, [currentRow]);
 
   useEffect(() => {
-    if (gamePhase != "inProgress") return;
-    if (result.every((result) => result === "Hit")) {
-      setGamePhase("won");
-      setTimeout(() => setOpenResultDialog(true), 2500);
-    } else if (currentRow >= maximumRound) {
-      setGamePhase("lost");
-      setTimeout(() => setOpenResultDialog(true), 1500);
+    if (gamePhase !== "inProgress") return;
+    
+    const resultHistory = player === 1 ? player1ResultHistory : player2ResultHistory;
+    
+    if (rowIndex === currentRow - 1 && resultHistory[rowIndex]) {
+      const currentResult = resultHistory[rowIndex];
+      if (currentResult.every((r) => r === "Hit")) {
+        setCardText("")
+        setTimerRunning(false)
+        setGamePhase(player === 1 ? "1won" : "2won");
+        setTimeout(() => setOpenResultDialog(true), 2500);
+      }
     }
   }, [result]);
 

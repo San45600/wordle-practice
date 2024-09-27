@@ -9,9 +9,9 @@ export function ResultDialog({ callback }: { callback: () => void }) {
   const {
     answer,
     openResultDialog,
-    maximumRound,
-    currentRow,
     gamePhase,
+    player1CurrentRow,
+    player2CurrentRow,
     setOpenResultDialog,
     setGamePhase,
     initialize,
@@ -21,17 +21,17 @@ export function ResultDialog({ callback }: { callback: () => void }) {
     <Dialog open={openResultDialog} onOpenChange={setOpenResultDialog}>
       <DialogContent className="h-96 flex flex-col items-center justify-evenly">
         <div className="text-4xl">
-          {gamePhase == "won" ? "Congratulations!" : "Better luck next time!"}
+          {gamePhase == "1won" ? "player1 won!" : gamePhase == "2won" ? "player2 won!" : "Time's up!"}
         </div>
-        <div>{gamePhase == "won" ? "You guessed:" : "The answer:"}</div>
-        <WordRow rowIndex={-1} word={answer} />
-        {gamePhase == "won" && <div>Number of tries: {currentRow}</div>}
+        <div>The answer:</div>
+        <WordRow rowIndex={-1} word={answer} player={0} />
+         <div>Number of tries: {player1CurrentRow + player2CurrentRow}</div>
         <div className="flex flex-col gap-4">
           <Button
             className="w-64"
             onClick={() => {
               setOpenResultDialog(false);
-              initialize(maximumRound);
+              initialize();
               callback();
             }}
           >

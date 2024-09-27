@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export function Keyboard() {
+export function Keyboard({ disabled }: { disabled: boolean }) {
   const firstRow = "QWERTYUIOP".split("");
   const secondRow = "ASDFGHJKL".split("");
   const thirdRow = "ZXCVBNM".split("");
@@ -17,6 +17,7 @@ export function Keyboard() {
     missLetter,
     hardMode,
     wordList,
+    playerControlling,
     setCurrentGuess,
     handleEnter,
   } = useGameState();
@@ -56,6 +57,7 @@ export function Keyboard() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (gamePhase != "inProgress") return;
+      if (disabled) return;
       if (event.key === "Enter") {
         if (inputValidation()) handleEnter();
       } else if (event.key === "Backspace") {
@@ -71,10 +73,10 @@ export function Keyboard() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [gamePhase]);
+  }, [gamePhase, disabled]);
 
   return (
-    <div className="flex flex-col justify-center items-center gap-2 mt-8">
+    <div className="flex flex-col justify-center items-center gap-2 pb-12">
       {/* First row of keys */}
       <div className="gap-2 flex">
         {firstRow.map((key) => (
@@ -82,7 +84,7 @@ export function Keyboard() {
             size={"icon"}
             key={key}
             className={cn(getKeyColor(key))}
-            disabled={gamePhase != "inProgress"}
+            disabled={gamePhase != "inProgress" || disabled}
             onClick={() => handleKeyPress(key.toLowerCase())}
           >
             {key}
@@ -97,7 +99,7 @@ export function Keyboard() {
             size={"icon"}
             key={key}
             className={cn(getKeyColor(key))}
-            disabled={gamePhase != "inProgress"}
+            disabled={gamePhase != "inProgress" || disabled}
             onClick={() => handleKeyPress(key.toLowerCase())}
           >
             {key}
@@ -112,7 +114,7 @@ export function Keyboard() {
             size={"icon"}
             key={key}
             className={cn(getKeyColor(key))}
-            disabled={gamePhase != "inProgress"}
+            disabled={gamePhase != "inProgress" || disabled}
             onClick={() => handleKeyPress(key.toLowerCase())}
           >
             {key}
@@ -122,7 +124,7 @@ export function Keyboard() {
         {/* Backspace */}
         <Button
           onClick={() => setCurrentGuess("")}
-          disabled={gamePhase != "inProgress"}
+          disabled={gamePhase != "inProgress" || disabled}
         >
           ⌫
         </Button>
@@ -132,7 +134,7 @@ export function Keyboard() {
           onClick={() => {
             if (inputValidation()) handleEnter();
           }}
-          disabled={gamePhase != "inProgress"}
+          disabled={gamePhase != "inProgress" || disabled}
         >
           Enter
         </Button>

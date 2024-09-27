@@ -20,31 +20,50 @@ import { ScrollArea } from "./ui/scroll-area";
 import { SparklesAnimation } from "./SparklesAnimation";
 import { Separator } from "./ui/separator";
 import { FaGithub } from "react-icons/fa6";
+import { Card } from "./ui/card";
+import { Timer } from "./Timer";
+import { toast } from "sonner";
 
 const buttonClassName = "hover:text-green-500 w-fit";
 
 export function WordleGame() {
   const {
-    guessList,
+    player1GuessList,
+    player2GuessList,
+    player1CurrentRow,
+    player2CurrentRow,
+    playerControlling,
     answer,
     gamePhase,
-    maximumRound,
-    currentRow,
     hardMode,
+    isTimerRunning,
+    cardText,
+    setCardText,
+    setTimerRunning,
     setOpenSettingsDialog,
+    setOpenResultDialog,
     setGamePhase,
     initialize,
   } = useGameState();
 
   const [confirm, setConfirm] = useState(false);
   const [triggerSparkle, setTriggerSparkle] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const player1ScrollAreaRef = useRef<HTMLDivElement>(null);
+  const player2ScrollAreaRef = useRef<HTMLDivElement>(null);
+
+
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = 64 * currentRow - 336;
+    if (player1ScrollAreaRef.current) {
+      player1ScrollAreaRef.current.scrollTop = 64 * player1CurrentRow - 336;
     }
-  }, [currentRow]);
+  }, [player1CurrentRow]);
+
+  useEffect(() => {
+    if (player2ScrollAreaRef.current) {
+      player2ScrollAreaRef.current.scrollTop = 64 * player2CurrentRow - 336;
+    }
+  }, [player2CurrentRow]);
 
   useEffect(() => {
     if (!confirm) return;
@@ -52,7 +71,15 @@ export function WordleGame() {
   }, [confirm]);
 
   useEffect(() => {
-    if (gamePhase == "won") setTimeout(() => setTriggerSparkle(true), 1500);
+    if (gamePhase == "1won" || gamePhase == "2won")
+      setTimeout(() => setTriggerSparkle(true), 1500);
+    if (gamePhase == "inProgress") {
+      setTimeout(() => setCardText("3"), 2000);
+      setTimeout(() => setCardText("2"), 3000);
+      setTimeout(() => setCardText("1"), 4000);
+      setTimeout(() => setCardText("Go!"), 5000);
+      setTimeout(() => setTimerRunning(true), 5250);
+    }
   }, [gamePhase]);
 
   return (
@@ -71,14 +98,12 @@ export function WordleGame() {
                   duration: 0.5,
                 }}
               >
-                <h1 className="text-6xl ">
-                  Wordle Game
-                </h1>
+                <h1 className="text-6xl ">Wordle Time Attack!</h1>
                 <div className="mt-8 flex flex-col gap-4 text-3xl">
                   <button
                     className={buttonClassName}
                     onClick={() => {
-                      initialize(maximumRound);
+                      initialize();
                     }}
                   >
                     Play
@@ -89,7 +114,11 @@ export function WordleGame() {
                   >
                     Settings
                   </button>
-                  <div className={"absolute bottom-4 left-6 flex gap-2 items-center text-lg"}>
+                  <div
+                    className={
+                      "absolute bottom-4 left-6 flex gap-2 items-center text-lg"
+                    }
+                  >
                     <span>Made by</span>
                     <a
                       href="https://x.com/HoSan45600"
@@ -120,19 +149,26 @@ export function WordleGame() {
                   duration: 0.5,
                 }}
               >
+                <div className="flex gap-2">
                 <ScrollArea className="flex flex-col max-h-[30rem]">
-                  {guessList.map((_, index) => (
-                    <WordRow key={index} rowIndex={index} />
+                  {player1GuessList.map((_, index) => (
+                    <WordRow key={index} player={1} rowIndex={index} />
                   ))}
-                  {answer && <WordRow rowIndex={-1} word={answer} />}
                 </ScrollArea>
+                <ScrollArea className="flex flex-col max-h-[30rem]">
+                  {player2GuessList.map((_, index) => (
+                    <WordRow key={index} player={2} rowIndex={index} />
+                  ))}
+                </ScrollArea>
+                </div>
+                {answer && <WordRow rowIndex={-1} player={1} word={answer} />}
               </motion.div>
             </>
           )}
           {gamePhase != "preGame" && gamePhase != "initializing" && (
             <motion.div
               key={"game"}
-              className="absolute flex flex-col h-full justify-center items-center "
+              className="absolute w-full flex flex-col h-full justify-around items-center "
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -172,13 +208,67 @@ export function WordleGame() {
                 </div>
               )}
 
-              <div
-                ref={scrollAreaRef}
-                className="flex flex-col max-h-[26rem] overflow-scroll"
-              >
-                {guessList.map((_, index) => (
-                  <WordRow key={index} rowIndex={index} />
-                ))}
+              <div className="absolute pointer-events-none w-full h-full flex justify-center items-start pt-8">
+                <Timer
+                  isRunning={isTimerRunning}
+                  onTimeUp={() => {
+                    setGamePhase("lost");
+                    toast("Time's up!");
+                    setTimerRunning(false)
+                    setTimeout(() => {
+                      setOpenResultDialog(true);
+                    }, 2000);
+                  }}
+                  duration={60}
+                />
+              </div>
+
+              <AnimatePresence>
+                {!isTimerRunning && !!cardText && (
+                  <motion.div
+                    key={"ready"}
+                    className="absolute w-full h-full flex justify-center items-center"
+                    exit={{ y: 2000 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <Card className="w-[60%] h-[40%] flex justify-center items-center z-20 border-2 border-white text-7xl">
+                      {cardText}
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div className="flex justify-evenly w-full h-full pt-12">
+                <div className="flex flex-col gap-2 items-center">
+                  {playerControlling == 1 && gamePhase == "inProgress" ? (
+                    <div className="text-2xl">{"Player1's turn!"}</div>
+                  ) : (
+                    <div className="h-8" /> // placeholder
+                  )}
+                  <div
+                    ref={player1ScrollAreaRef}
+                    className="flex flex-col max-h-[26rem] overflow-scroll"
+                  >
+                    {player1GuessList.map((_, index) => (
+                      <WordRow key={index} player={1} rowIndex={index} />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 items-center">
+                  {playerControlling == 2 && gamePhase == "inProgress"  ? (
+                    <div className="text-2xl">{"Player2's turn!"}</div>
+                  ) : (
+                    <div className="h-8" /> // placeholder
+                  )}
+
+                  <div
+                    ref={player2ScrollAreaRef}
+                    className="flex flex-col max-h-[26rem] overflow-scroll"
+                  >
+                    {player2GuessList.map((_, index) => (
+                      <WordRow key={index} player={2} rowIndex={index} />
+                    ))}
+                  </div>
+                </div>
               </div>
               <SparklesAnimation
                 isTriggered={triggerSparkle}
@@ -190,7 +280,7 @@ export function WordleGame() {
                 className="absolute w-full flex items-end justify-end"
                 direction="top-right"
               />
-              <Keyboard />
+              <Keyboard disabled={!isTimerRunning} />
             </motion.div>
           )}
           {gamePhase == "initializing" && (
