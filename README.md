@@ -12,10 +12,10 @@ The project is designed to be flexible and customizable, allowing players to imp
 
 ## Features
 
-•	Configurable word list and round limits.
-•	Multiple game modes (Normal, Host Cheating, Time Attack Multiplayer).
-•	Real-time synchronization for multiplayer modes.
-•	JSON-based word list import and export.
+	•	Configurable word list and round limits.
+	•	Multiple game modes (Normal, Host Cheating, Time Attack Multiplayer).
+	•	Real-time synchronization for multiplayer modes.
+	•	JSON-based word list import and export.
 
 ## Setup
 
