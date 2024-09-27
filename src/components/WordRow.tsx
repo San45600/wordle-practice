@@ -20,6 +20,8 @@ export function WordRow({
     gamePhase,
     resultHistory,
     maximumRound,
+    candidates,
+    setAnswer,
     setGamePhase,
     setOpenResultDialog,
   } = useGameState();
@@ -48,6 +50,7 @@ export function WordRow({
     if (gamePhase != "inProgress") return;
     if (result.every((result) => result === "Hit")) {
       setGamePhase("won");
+      setAnswer(guessList[rowIndex])
       setTimeout(() => setOpenResultDialog(true), 2500);
     } else if (currentRow >= maximumRound) {
       setGamePhase("lost");

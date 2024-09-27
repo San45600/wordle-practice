@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type GamePhaseType = "preGame" | "inProgress" | "lost" | "won" | "initializing";
+type ResultType = "Hit" | "Present" | "Miss";
 
 interface GameState {
   maximumRound: number;
@@ -15,6 +16,7 @@ interface GameState {
   openSettingsDialog: boolean;
   wordList: string[];
   hardMode: boolean;
+  candidates: string[];
 
   presentedLetter: string[];
   hitLetter: string[];
@@ -34,6 +36,7 @@ interface GameState {
   setOpenSettingsDialog: (val: boolean) => void;
   setWordList: (val: string[]) => void;
   setHardMode: (val: boolean) => void;
+  setCandidates: (val: string[]) => void;
 
   initialize: (rows: number) => void;
   handleEnter: () => void;
@@ -54,6 +57,7 @@ export const useGameState = create<GameState>()((set, get) => ({
   missLetter: [],
   wordList: ["apple", "brain", "flame", "crown", "light"], // Example word list
   hardMode: false,
+  candidates: [],
 
   pushPresentedLetter: (val) =>
     set(({ presentedLetter }) => ({
@@ -87,11 +91,9 @@ export const useGameState = create<GameState>()((set, get) => ({
   setOpenSettingsDialog: (val) => set({ openSettingsDialog: val }),
   setWordList: (val) => set({ wordList: val }),
   setHardMode: (val) => set({ hardMode: val }),
+  setCandidates: (val) => set({ candidates: val }),
 
   initialize: (rows) => {
-    const { answer, wordList } = get();
-    const newWords = wordList.filter((word) => word !== (answer ?? ""));
-
     set({
       gamePhase: "initializing",
     });
@@ -99,83 +101,145 @@ export const useGameState = create<GameState>()((set, get) => ({
     setTimeout(() => {
       set({
         guessList: Array(rows).fill(""),
+        answer: "",
+        candidates: get().wordList,
         currentGuess: "",
         gamePhase: "inProgress",
         currentRow: 0,
         presentedLetter: [],
         hitLetter: [],
         missLetter: [],
-        answer: newWords[Math.floor(Math.random() * newWords.length)],
       });
     }, 1000);
   },
 
   // Function to handle events after pressing enter button
   handleEnter: () => {
-    set((state) => {
-      const { currentGuess, answer } = state;
-      if (currentGuess.length !== 5) return state; // Ensure guess is complete
+    const { currentGuess, candidates, currentRow, answer, wordList } = get();
+    if (currentGuess.length !== 5) return; // Ensure guess is complete
 
-      const newEvaluatedHitLetter = [...state.hitLetter];
-      const newEvaluatedPresentedLetter = [...state.presentedLetter];
-      const newEvaluatedMissLetter = [...state.missLetter];
-
-      // Create a copy of the answer to track remaining letters
-      const remainingLetters = answer.split("");
-      const result = Array(5).fill("");
+    const generateResult = (guess: string, target: string): ResultType[] => {
+      const result: ResultType[] = Array(5).fill("Miss");
+      const remainingLetters = target.split("");
 
       // First pass: Mark exact matches (hits)
-      for (let i = 0; i < currentGuess.length; i++) {
-        const guessLetter = currentGuess[i].toLowerCase();
-        if (guessLetter === remainingLetters[i]) {
-          if (!newEvaluatedHitLetter.includes(guessLetter)) {
-            newEvaluatedHitLetter.push(guessLetter);
-          }
+      for (let i = 0; i < 5; i++) {
+        if (guess[i] === remainingLetters[i]) {
           result[i] = "Hit";
-          remainingLetters[i] = ""; // Mark this letter as used
+          remainingLetters[i] = "";
         }
       }
 
-      // Second pass: Check for presented and miss letters
-      for (let i = 0; i < currentGuess.length; i++) {
-        const guessLetter = currentGuess[i].toLowerCase();
-        if (guessLetter !== answer[i]) {
-          const indexInRemaining = remainingLetters.indexOf(guessLetter);
-          if (indexInRemaining !== -1) {
-            // Letter is present but in wrong position
-            if (
-              !newEvaluatedPresentedLetter.includes(guessLetter) &&
-              !newEvaluatedHitLetter.includes(guessLetter)
-            ) {
-              newEvaluatedPresentedLetter.push(guessLetter);
-            }
+      // Second pass: Check for presented letters
+      for (let i = 0; i < 5; i++) {
+        if (result[i] !== "Hit") {
+          const index = remainingLetters.indexOf(guess[i]);
+          if (index !== -1) {
             result[i] = "Present";
-            remainingLetters[indexInRemaining] = ""; // Mark this letter as used
-          } else {
-            // Letter is not in the word or all instances have been accounted for
-            if (
-              !newEvaluatedMissLetter.includes(guessLetter) &&
-              !newEvaluatedPresentedLetter.includes(guessLetter) &&
-              !newEvaluatedHitLetter.includes(guessLetter)
-            ) {
-              newEvaluatedMissLetter.push(guessLetter);
-            }
+            remainingLetters[index] = "";
           }
         }
       }
+
+      return result;
+    };
+
+    const calculateScore = (result: ResultType[]): number => {
+      const hitCount = result.filter((f) => f === "Hit").length;
+      const presentCount = result.filter((f) => f === "Present").length;
+      return hitCount * 2 + presentCount;
+    };
+
+    let newCandidates = [...candidates];
+    let selectedResult: { candidate: string; result: ResultType[] };
+
+    if (answer) {
+      // Normal Wordle behavior
+      selectedResult = {
+        candidate: answer,
+        result: generateResult(currentGuess, answer),
+      };
+      newCandidates = [answer];
+    } else {
+      // Host cheating behavior
+      let results = candidates.map((candidate) => ({
+        candidate,
+        result: generateResult(currentGuess, candidate),
+      }));
+
+      // Find the feedback with the lowest score
+      const lowestScore = Math.min(
+        ...results.map((f) => calculateScore(f.result))
+      );
+      const lowestScoreResults = results.filter(
+        (f) => calculateScore(f.result) === lowestScore
+      );
+
+      // Randomly select one of the lowest score feedbacks
+      selectedResult =
+        lowestScoreResults[
+          Math.floor(Math.random() * lowestScoreResults.length)
+        ];
+
+      // Filter candidates based on the selected result
+      newCandidates = candidates.filter(
+        (candidate) =>
+          JSON.stringify(generateResult(currentGuess, candidate)) ===
+          JSON.stringify(selectedResult.result)
+      );
+
+      // Check if we need to set an answer
+      if (newCandidates.length <= 100 && wordList.length >= 500) {
+        const randomAnswer =
+          newCandidates[Math.floor(Math.random() * newCandidates.length)];
+        set({ answer: randomAnswer });
+      } else if (newCandidates.length == 1) {
+        set({ answer: newCandidates[0] });
+      }
+    }
+
+    set((state) => {
+      const newHitLetter = [...state.hitLetter];
+      const newPresentedLetter = [...state.presentedLetter];
+      const newMissLetter = [...state.missLetter];
+
+      currentGuess.split("").forEach((letter, i) => {
+        if (
+          selectedResult.result[i] === "Hit" &&
+          !newHitLetter.includes(letter)
+        ) {
+          newHitLetter.push(letter);
+        } else if (
+          selectedResult.result[i] === "Present" &&
+          !newPresentedLetter.includes(letter)
+        ) {
+          newPresentedLetter.push(letter);
+        } else if (
+          selectedResult.result[i] === "Miss" &&
+          !newMissLetter.includes(letter) &&
+          !newHitLetter.includes(letter) &&
+          !newPresentedLetter.includes(letter)
+        ) {
+          newMissLetter.push(letter);
+        }
+      });
 
       return {
-        // ... other state updates ...
-        hitLetter: newEvaluatedHitLetter,
-        presentedLetter: newEvaluatedPresentedLetter,
-        missLetter: newEvaluatedMissLetter,
-        currentRow: state.currentRow + 1,
-        resultHistory: { ...state.resultHistory, [state.currentRow]: result },
+        candidates: newCandidates,
         guessList: state.guessList.map((guess, index) =>
           index === state.currentRow ? currentGuess : guess
         ),
-        currentGuess: "", // Reset currentGuess after entering
+        currentGuess: "",
+        currentRow: state.currentRow + 1,
+        resultHistory: {
+          ...state.resultHistory,
+          [currentRow]: selectedResult.result,
+        },
+        hitLetter: newHitLetter,
+        presentedLetter: newPresentedLetter,
+        missLetter: newMissLetter,
       };
     });
+    console.log(newCandidates);
   },
 }));
